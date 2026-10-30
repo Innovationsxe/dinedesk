@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+.venv/
+_pycache_/
+.env
+My_Workspace/
+*.pyc
+.DS_Store
