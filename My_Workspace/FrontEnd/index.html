@@ -1,0 +1,3305 @@
+<!DOCTYPE html>
+<html lang="en-SA">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http://127.0.0.1:5000; connect-src 'self' http://127.0.0.1:5000 ws://127.0.0.1:5500; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>DineDesk</title>
+  <meta name="description" content="A considered dining experience from DineDesk. Discover beautifully prepared favourites and order from our kitchen.">
+
+  <!--
+    Google Fonts — importing two typefaces:
+    Playfair Display: elegant serif font for headings (restaurant feel)
+    Inter: clean modern font for body text (easy to read)
+  -->
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- ================================================================
+     HOME PAGE
+     This is the first page visitors see
+     ================================================================ -->
+<div id="page-home" class="page active">
+  <div id="home-react-root"></div>
+</div><!-- end home page -->
+
+<!-- ================================================================
+     ORDER PAGE
+     Menu browsing and shopping cart
+     ================================================================ -->
+<div id="page-orders" class="page">
+  <div id="kitchen-react-root"></div>
+</div><!-- end order page -->
+
+<div id="page-confirmation" class="page order-confirmation-page">
+  <main class="order-confirmation-content" aria-labelledby="confirmation-title">
+    <p class="menu-eyebrow">DineDesk kitchen</p>
+    <div class="confirmation-success-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="m6 12.5 4 4 8-9" /></svg>
+    </div>
+    <h1 id="confirmation-title">Order received</h1>
+    <p class="confirmation-lead">Your order has been successfully sent to the DineDesk Kitchen.</p>
+    <div class="confirmation-facts">
+      <div class="confirmation-fact"><span>Order number</span><strong id="confirmed-order-number"></strong></div>
+      <div class="confirmation-fact"><span>Order total</span><strong id="confirmed-order-total"></strong></div>
+      <div class="confirmation-fact"><span>Status</span><strong id="confirmed-order-status"></strong></div>
+      <div class="confirmation-fact"><span>Order type</span><strong id="confirmed-order-type"></strong></div>
+      <div class="confirmation-fact"><span>Payment</span><strong id="confirmed-order-payment-method"></strong></div>
+      <div class="confirmation-fact"><span>Placed</span><strong id="confirmed-order-time"></strong></div>
+    </div>
+    <section class="customer-order-progress" aria-label="Order progress">
+      <p class="menu-eyebrow">Your order journey</p>
+      <ol id="customer-order-progress-list" class="customer-order-progress-list"></ol>
+    </section>
+    <p>The waiter has received your order and it is now being processed.</p>
+    <section class="confirmation-order-history" aria-labelledby="confirmation-order-history-title">
+      <p class="menu-eyebrow">Your DineDesk visits</p>
+      <h2 id="confirmation-order-history-title">Previous orders</h2>
+      <p id="confirmation-order-history-message">Verify your email to see your other orders and their latest status.</p>
+      <div id="confirmation-order-history-list"></div>
+      <button class="btn-secondary" type="button" onclick="showPage('customer-orders')">Verify email and view all orders</button>
+    </section>
+    <section id="loyalty-thank-you" class="loyalty-thank-you" hidden>
+      <p class="menu-eyebrow">A little something for next time</p>
+      <h2>Thank you for dining with us.</h2>
+      <p id="loyalty-points-copy"></p>
+      <small>Earn one loyalty point for every R10 spent. Thank you for choosing DineDesk.</small>
+    </section>
+    <section id="payment-request-panel" class="payment-request-panel" hidden>
+      <p id="payment-request-copy"></p>
+      <button id="request-payment-button" class="form-submit" type="button" onclick="requestWaiterToPay()">Call waiter to pay</button>
+    </section>
+    <section id="customer-reservation-panel" class="customer-reservation-panel">
+      <p class="menu-eyebrow">A place of your own</p>
+      <p id="customer-reservation-summary">Reserve a table for a chosen time. A separate R50 booking fee is payable to your waiter.</p>
+      <button id="make-table-reservation-button" class="btn-secondary" type="button" onclick="openTableReservation()">Make a table reservation</button>
+    </section>
+    <dialog id="table-reservation-dialog" class="confirmation-rating table-reservation-dialog" aria-labelledby="table-reservation-title">
+      <form class="rating-form" onsubmit="submitTableReservation(event)">
+        <h2 id="table-reservation-title">Reserve your table</h2>
+        <label for="reservation-start">Date and time</label>
+        <input id="reservation-start" type="datetime-local" step="1800" required>
+        <label for="reservation-table">Available table</label>
+        <select id="reservation-table" required><option value="">Choose a time to view tables</option></select>
+        <p class="reservation-fee-copy">A separate R50 reservation fee is due to your waiter.</p>
+        <p id="reservation-result" role="status"></p>
+        <button id="reservation-submit" class="form-submit" type="submit">Confirm reservation</button>
+        <button class="btn-secondary" type="button" onclick="closeTableReservation()">Cancel</button>
+      </form>
+    </dialog>
+    <dialog id="confirmation-rating" class="confirmation-rating" aria-labelledby="confirmation-rating-title">
+      <h2 id="confirmation-rating-title">How was your order?</h2>
+      <form class="rating-form" onsubmit="submitOrderRating(event)">
+        <label for="order-rating">Rating</label>
+        <select id="order-rating" required>
+          <option value="">Choose a rating</option>
+          <option value="5">5 - Excellent</option>
+          <option value="4">4 - Good</option>
+          <option value="3">3 - Okay</option>
+          <option value="2">2 - Poor</option>
+          <option value="1">1 - Very poor</option>
+        </select>
+        <button class="form-submit" type="submit">Submit rating</button>
+        <p id="rating-result" role="status"></p>
+      </form>
+      <button class="btn-secondary" type="button" onclick="closeOrderRating()">Rate later</button>
+    </dialog>
+    <div class="confirmation-actions">
+      <button id="rate-order-button" class="btn-secondary" type="button" onclick="toggleOrderRating()" hidden>Rate this order</button>
+      <button class="confirmation-complaint-button" type="button" onclick="toggleComplaintForm()">Make a complaint</button>
+      <button class="btn-secondary" type="button" onclick="showPage('customer-orders')">View all my orders</button>
+      <button class="btn-secondary confirmation-menu-button" type="button" onclick="placeAnotherOrder()">Back to menu</button>
+    </div>
+    <section id="confirmation-complaint" class="confirmation-complaint" hidden aria-labelledby="confirmation-complaint-title">
+      <div class="complaint-order-summary" id="complaint-order-summary"></div>
+      <h2 id="confirmation-complaint-title">What went wrong?</h2>
+      <form class="complaint-form" onsubmit="submitComplaint(event)">
+        <div class="form-group"><label for="complaint-category">Problem</label><select id="complaint-category" required><option value="">Select a problem</option><option>Wrong order</option><option>Missing item</option><option>Food quality</option><option>Food temperature</option><option>Long waiting time</option><option>Poor service</option><option>Incorrect bill</option><option>Payment problem</option><option>Hygiene concern</option><option>Other</option></select></div>
+        <div class="form-group"><label for="complaint-severity">Priority</label><select id="complaint-severity" required><option>General feedback</option><option selected>Problem with my order</option><option>Urgent issue</option></select></div>
+        <div class="form-group"><label for="complaint-identity">Reply identity</label><select id="complaint-identity"><option value="anonymous">Anonymous</option><option value="add_email">Add email for manager feedback</option></select></div>
+        <div class="form-group" id="complaint-email-group" hidden><label for="complaint-email">Email address</label><input id="complaint-email" type="email" placeholder="you@example.com" autocomplete="email"><small>The manager can use this address to reply to your complaint.</small></div>
+        <div class="form-group"><label for="complaint-input">Description</label><textarea id="complaint-input" rows="6" minlength="10" maxlength="2000" placeholder="Please describe what went wrong..." required></textarea></div>
+        <button class="form-submit" type="submit">Submit complaint</button>
+        <p id="complaint-result" class="complaint-result" role="status"></p>
+      </form>
+    </section>
+  </main>
+</div><!-- end confirmation page -->
+
+<div id="page-customer-orders" class="page customer-orders-page">
+  <main class="customer-orders-content">
+    <p class="menu-eyebrow">DineDesk order history</p>
+    <h1>Your orders, <em>all together.</em></h1>
+    <p id="customer-order-history-intro">Verify your email to see your past orders and follow their latest status.</p>
+    <form id="customer-order-history-email-form" class="customer-order-history-form">
+      <label for="customer-order-history-email">Email address</label>
+      <input id="customer-order-history-email" type="email" autocomplete="email" required maxlength="254">
+      <button class="lux-button lux-button-dark" type="submit">Email me a code</button>
+    </form>
+    <form id="customer-order-history-code-form" class="customer-order-history-form" hidden>
+      <label for="customer-order-history-code">Six-digit verification code</label>
+      <input id="customer-order-history-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+      <button class="lux-button lux-button-dark" type="submit">Verify and view orders</button>
+    </form>
+    <p id="customer-order-history-message" class="customer-order-history-message" role="status" aria-live="polite"></p>
+    <section id="customer-order-history-list" class="customer-order-history-list" aria-live="polite"></section>
+    <button id="customer-order-history-signout" class="btn-secondary" type="button" hidden>Use a different email</button>
+    <button class="lux-button lux-button-outline customer-orders-back" type="button" onclick="returnHome()">Back to home</button>
+  </main>
+</div>
+
+
+<!-- ================================================================
+     REGISTER PAGE
+     New users fill in this form to create an account
+     ================================================================ -->
+<div id="page-register" class="page">
+  <div class="form-page">
+
+    <!-- Small nav on register page -->
+    <nav>
+      <div class="nav-logo" onclick="showPage('home')"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg>DineDesk food</div>
+      <div class="nav-links">
+        <button class="nav-btn outline" onclick="showPage('home')">Home</button>
+        <button class="nav-btn outline" onclick="showPage('login')">Already have an account?</button>
+      </div>
+    </nav>
+
+    <!-- Centred form card -->
+    <div class="form-wrapper">
+      <div class="form-card">
+        <h2>Create a staff account</h2>
+        <p class="form-sub">Choose an account type. Invitation keys are required in production, but not for local development.</p>
+
+        <!-- Register form -->
+        <!-- action="#" prevents page reload, JavaScript handles submission -->
+        <form id="register-form" action="#" onsubmit="handleRegister(event)">
+
+          <!-- First name and last name side by side -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstname">First name</label>
+              <input type="text" id="firstname" name="firstname"
+                     placeholder="John" required>
+            </div>
+            <div class="form-group">
+              <label for="lastname">Last name</label>
+              <input type="text" id="lastname" name="lastname"
+                     placeholder="Doe" required>
+            </div>
+          </div>
+
+          <!-- Email input -->
+          <div class="form-group">
+            <label for="reg-email">Email address</label>
+            <input type="email" id="reg-email" name="email"
+                   placeholder="john@example.com" required>
+          </div>
+
+          <!-- Password input -->
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" name="password"
+                   placeholder="At least 12 characters" minlength="12" maxlength="128" required>
+          </div>
+
+          <div class="form-group">
+            <label for="staff-role">Account type</label>
+            <select id="staff-role" name="role" required>
+              <option value="waiter">Waiter</option>
+              <option value="manager">Manager</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="staff-registration-key">Invitation key (production only)</label>
+            <input type="password" id="staff-registration-key" name="registration-key"
+                   autocomplete="off">
+          </div>
+
+          <!-- Submit button -->
+          <button type="submit" class="form-submit">Create Account</button>
+
+        </form>
+
+        <!-- Link to login page -->
+        <p class="form-footer">
+          Already have an account?
+          <span onclick="showPage('login')">Sign in</span>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div><!-- end register page -->
+
+
+<!-- ================================================================
+     LOGIN PAGE
+     Existing users enter their email and password here
+     ================================================================ -->
+<div id="page-login" class="page">
+  <div class="form-page">
+
+    <nav>
+      <div class="nav-logo" onclick="showPage('home')"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg>DineDesk</div>
+      <div class="nav-links">
+        <button class="nav-btn outline login-home-button" type="button" onclick="returnHome()">Back to home</button>
+      </div>
+    </nav>
+
+    <div class="form-wrapper">
+      <div class="form-card login-luxury-card">
+        <p class="login-eyebrow">DineDesk · Private staff access</p>
+        <h2>Welcome back</h2>
+        <p class="form-sub">Sign in to continue.</p>
+
+        <form id="login-form" action="#" onsubmit="handleLogin(event)">
+
+          <div class="form-group">
+            <label for="login-email">Email address</label>
+            <input type="email" id="login-email" name="email"
+                   placeholder="john@example.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" name="password"
+                   placeholder="Enter your password" required>
+          </div>
+
+          <button type="submit" class="form-submit">Sign In</button>
+
+        </form>
+
+        <p class="form-footer">
+          Don't have an account?
+          <span onclick="showPage('register')">Register here</span>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div><!-- end login page -->
+
+<div id="page-waiter-dashboard" class="page chat-page">
+  <div class="chat-header staff-lux-header">
+    <div class="chat-header-info">
+      <button class="staff-brand" type="button" onclick="showPage('home')" aria-label="DineDesk home"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg>DineDesk</button>
+      <span class="staff-header-rule" aria-hidden="true"></span>
+      <div><h4>Service desk</h4><p id="waiter-welcome">Manage table service</p></div>
+    </div>
+    <div class="staff-header-actions">
+      <button class="staff-home-link" type="button" onclick="showPage('home')">Home</button>
+      <button class="logout-btn" type="button" onclick="handleLogout()">Sign out</button>
+    </div>
+  </div>
+  <main class="staff-dashboard-main">
+    <nav class="waiter-orders-nav" aria-label="Service desk sections">
+      <button class="waiter-view-tab active" type="button" data-waiter-view="live">Live orders</button>
+      <button class="waiter-view-tab" type="button" data-waiter-view="history">Order history</button>
+      <button class="waiter-view-tab" type="button" data-waiter-view="cancelled">Cancelled orders</button>
+      <button class="waiter-view-tab" type="button" data-waiter-view="complaints">Complaints</button>
+      <button class="waiter-view-tab" type="button" data-waiter-view="payments">Payment requests</button>
+      <button class="waiter-view-tab" type="button" data-waiter-view="reservations">Reservations</button>
+    </nav>
+    <div class="staff-orders-heading">
+      <h2 id="waiter-view-title">Live orders</h2>
+      <button class="staff-refresh-button" id="waiter-refresh-button" type="button" onclick="refreshWaiterOrders()">Refresh orders <span aria-hidden="true">↻</span></button>
+      <span id="waiter-refresh-status" role="status" aria-live="polite"><i aria-hidden="true"></i> Updating automatically</span>
+    </div>
+    <section class="staff-orders" id="waiter-orders" aria-label="Live restaurant orders"></section>
+  </main>
+</div>
+
+<div id="page-manager-dashboard" class="page chat-page">
+  <div class="chat-header staff-lux-header">
+    <div class="chat-header-info">
+      <button class="staff-brand" type="button" onclick="showPage('home')" aria-label="DineDesk home"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg>DineDesk</button>
+      <span class="staff-header-rule" aria-hidden="true"></span>
+      <div><h4>Management suite</h4><p id="manager-welcome">Manage your team and restaurant</p></div>
+    </div>
+    <div class="staff-header-actions">
+      <button class="staff-home-link" type="button" onclick="showPage('home')">Home</button>
+      <button class="manager-action" id="manager-dashboard-refresh" type="button" onclick="refreshManagerDashboard()">Refresh</button>
+      <button class="logout-btn" type="button" onclick="handleLogout()">Sign out</button>
+    </div>
+  </div>
+  <main class="manager-dashboard">
+    <nav class="manager-tabs" aria-label="Manager sections">
+      <button class="manager-tab active" type="button" data-manager-section="manager-overview">Overview</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-pantry-section"><span aria-hidden="true">🥬</span> Pantry</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-menu-section">Menu</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-promotions-section">Promotions</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-complaints-section">Complaints <span id="manager-complaints-count" class="manager-tab-count">0</span></button>
+      <button class="manager-tab" type="button" data-manager-section="manager-shifts-section">Shifts</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-staff-section">Staff roster</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-exports-section">Exports</button>
+    </nav>
+    <section id="manager-overview" class="manager-section-panel">
+      <section class="manager-stat-grid" id="manager-stats" aria-label="Restaurant statistics"></section>
+      <section class="manager-panel pantry-dashboard-card" aria-labelledby="manager-pantry-summary-title">
+        <div class="manager-panel-heading">
+          <h2 id="manager-pantry-summary-title">Pantry snapshot</h2>
+          <button class="manager-action" type="button" data-manager-section-link="manager-pantry-section">Manage pantry</button>
+        </div>
+        <div class="pantry-summary-grid" id="manager-pantry-summary">
+          <p class="manager-loading">Loading pantry summary...</p>
+        </div>
+      </section>
+      <div class="manager-dashboard-grid">
+        <section class="manager-panel manager-panel-wide">
+          <div class="manager-panel-heading"><h2>Live order activity</h2><span id="manager-orders-status" class="manager-live-indicator is-connecting" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Connecting</span></span></div>
+          <div id="manager-orders" class="manager-list"></div>
+        </section>
+        <section class="manager-panel"><div class="manager-panel-heading"><h2>Daily menu performance</h2><span class="manager-panel-note">Today</span></div><div id="manager-menu" class="manager-list"></div></section>
+        <section class="manager-panel"><div class="manager-panel-heading"><h2>Customer complaints</h2></div><div id="manager-complaints" class="manager-list"></div></section>
+      </div>
+    </section>
+    <section id="manager-pantry-section" class="manager-section-panel hidden">
+      <section class="manager-panel">
+        <div class="manager-panel-heading">
+          <div><h2>Pantry inventory</h2><p class="pantry-subtitle">Track stock levels, suppliers, and expiry dates.</p></div>
+          <div class="pantry-form-actions">
+            <button class="manager-action" id="pantry-refresh" type="button">Refresh stock</button>
+            <button class="manager-action primary" id="pantry-add-item" type="button">Add item</button>
+          </div>
+        </div>
+        <div id="pantry-alerts" class="pantry-alerts" role="status" aria-live="polite"></div>
+        <div id="pantry-form-wrap" class="pantry-form-wrap hidden">
+          <h3 id="pantry-form-title">Add pantry item</h3>
+          <form id="pantry-item-form" class="manager-form pantry-item-form">
+            <input name="name" placeholder="Item name" maxlength="120" required>
+            <select name="category" required>
+              <option>Produce</option><option>Meat</option><option>Dairy</option><option>Dry Goods</option>
+              <option>Beverages</option><option>Spices</option><option>Cleaning/Other</option>
+            </select>
+            <input name="quantity" type="number" min="0" step="any" placeholder="Quantity on hand" required>
+            <select name="unit" required><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pcs</option><option>box</option></select>
+            <input name="reorder_level" type="number" min="0" step="any" placeholder="Reorder level" required>
+            <input name="cost_per_unit" type="number" min="0" step="0.01" placeholder="Cost per unit (R)" required>
+            <input name="supplier" maxlength="120" placeholder="Supplier">
+            <input name="expiry_date" type="date" aria-label="Expiry date (optional)">
+            <div class="pantry-form-actions"><button class="manager-action primary" type="submit">Save item</button><button class="manager-action" id="pantry-cancel-item" type="button">Cancel</button></div>
+            <p id="pantry-item-result" class="manager-form-result" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+        <div class="pantry-filters" aria-label="Filter pantry items">
+          <input id="pantry-search" type="search" placeholder="Search items..." aria-label="Search pantry items">
+          <select id="pantry-filter-category" aria-label="Filter by category"><option value="">All categories</option></select>
+          <select id="pantry-filter-supplier" aria-label="Filter by supplier"><option value="">All suppliers</option></select>
+          <select id="pantry-filter-status" aria-label="Filter by status">
+            <option value="">All statuses</option><option>In Stock</option><option>Low Stock</option>
+            <option>Out of Stock</option><option>Expiring Soon</option><option>Expired</option>
+          </select>
+        </div>
+        <p id="pantry-error" class="manager-error" role="alert"></p>
+        <div class="pantry-table-wrap">
+          <table class="pantry-table">
+            <thead><tr>
+              <th><button type="button" data-pantry-sort="id">Item ID</button></th>
+              <th><button type="button" data-pantry-sort="name">Name</button></th>
+              <th><button type="button" data-pantry-sort="category">Category</button></th>
+              <th><button type="button" data-pantry-sort="quantity">Quantity on hand</button></th>
+              <th>Unit</th>
+              <th><button type="button" data-pantry-sort="reorder_level">Reorder level</button></th>
+              <th><button type="button" data-pantry-sort="cost_per_unit">Cost per unit</button></th>
+              <th><button type="button" data-pantry-sort="supplier">Supplier</button></th>
+              <th><button type="button" data-pantry-sort="expiry_date">Expiry date</button></th>
+              <th><button type="button" data-pantry-sort="status">Status</button></th>
+              <th><button type="button" data-pantry-sort="last_updated">Last updated</button></th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="pantry-items"><tr><td colspan="12" class="manager-empty">Loading pantry items...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><h2>Stock movement log</h2><div class="pantry-form-actions"><span class="manager-panel-note">Latest 500</span><button class="manager-action primary" id="pantry-add-stock" type="button">Add stock</button></div></div>
+        <div class="pantry-table-wrap">
+          <table class="pantry-table movement-table">
+            <thead><tr><th>Date</th><th>Item</th><th>Change</th><th>Reason</th><th>Supplier / cost</th><th>Performed by</th></tr></thead>
+            <tbody id="pantry-movements"><tr><td colspan="6" class="manager-empty">Loading stock movements...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+    <dialog id="pantry-movement-dialog" class="pantry-dialog">
+      <form id="pantry-movement-form" method="dialog">
+        <div class="manager-panel-heading"><h2 id="pantry-movement-title">Restock item</h2><button class="manager-action" type="button" id="pantry-movement-close" aria-label="Close">Close</button></div>
+        <input type="hidden" name="item_id">
+        <input type="hidden" name="movement_type">
+        <label class="pantry-dialog-field pantry-item-select-field hidden">Stock item <select name="selected_item"></select></label>
+        <label class="pantry-dialog-field">Quantity <input name="quantity" type="number" min="0.01" step="any" required></label>
+        <label class="pantry-dialog-field pantry-restock-field">Supplier <input name="supplier" maxlength="120" required></label>
+        <label class="pantry-dialog-field pantry-restock-field">Cost per unit (R) <input name="cost_per_unit" type="number" min="0" step="0.01" required></label>
+        <label class="pantry-dialog-field pantry-adjust-field hidden">Reason <select name="reason"><option>Usage</option><option>Wastage</option><option>Spoilage</option></select></label>
+        <label class="pantry-dialog-field">Date <input name="date" type="date" required></label>
+        <p id="pantry-movement-error" class="manager-error" role="alert"></p>
+        <div class="pantry-form-actions"><button class="manager-action primary" type="submit">Save movement</button><button class="manager-action" type="button" id="pantry-movement-cancel">Cancel</button></div>
+      </form>
+    </dialog>
+    <section id="manager-menu-section" class="manager-section-panel hidden">
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><h2>Menu management</h2></div>
+        <form id="manager-menu-form" class="manager-form" enctype="multipart/form-data">
+          <input id="manager-menu-name" name="name" placeholder="Dish name" required>
+          <input id="manager-menu-category" name="category" placeholder="Category" required>
+          <input id="manager-menu-price" name="price" type="number" min="0" step="0.01" placeholder="Price" required>
+          <input id="manager-menu-image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Choose menu photo from gallery">
+          <input id="manager-menu-description" name="description" placeholder="Short description" required>
+          <button class="form-submit" type="submit">Add menu item</button>
+          <p id="manager-menu-result" class="manager-form-result" role="status" aria-live="polite"></p>
+        </form>
+        <div id="manager-menu-management" class="manager-list"></div>
+      </section>
+    </section>
+    <section id="manager-promotions-section" class="manager-section-panel hidden">
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><h2>Promotions and pricing</h2></div>
+        <form id="manager-promotion-form" class="manager-form">
+          <select id="manager-promotion-item" required></select>
+          <input id="manager-promotion-discount" type="number" min="1" max="100" placeholder="Discount %" required>
+          <input id="manager-promotion-start" type="datetime-local" required>
+          <input id="manager-promotion-end" type="datetime-local" required>
+          <button class="form-submit" type="submit">Create promotion</button>
+        </form>
+        <div id="manager-promotions" class="manager-list"></div>
+      </section>
+    </section>
+    <section id="manager-complaints-section" class="manager-section-panel hidden">
+      <section class="manager-panel"><div class="manager-panel-heading"><h2>Complaint queue</h2></div><div id="manager-complaints-management" class="manager-list"></div></section>
+    </section>
+    <section id="manager-exports-section" class="manager-section-panel hidden">
+      <section class="manager-panel manager-export-panel">
+        <div class="manager-panel-heading"><div><h2>Company records</h2><p class="pantry-subtitle">Download business records as PDF documents.</p></div></div>
+        <div class="manager-export-actions">
+          <button class="manager-action" type="button" data-manager-export="orders">Orders PDF</button>
+          <button class="manager-action" type="button" data-manager-export="pantry">Pantry PDF</button>
+          <button class="manager-action" type="button" data-manager-export="staff">Staff & shifts PDF</button>
+          <button class="manager-action" type="button" data-manager-export="complaints">Complaints PDF</button>
+          <button class="manager-action" type="button" data-manager-export="reservations">Reservations PDF</button>
+          <button class="manager-action" type="button" data-manager-export="waitlist">Waitlist PDF</button>
+          <button class="manager-action primary" type="button" data-manager-export="all">All company records PDF</button>
+        </div>
+        <p id="manager-export-result" class="manager-form-result" role="status" aria-live="polite"></p>
+      </section>
+    </section>
+    <section id="manager-shifts-section" class="manager-section-panel hidden">
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><h2>Currently on duty</h2><span class="manager-panel-note">Live attendance</span></div>
+        <div id="manager-on-duty" class="manager-list"><p class="manager-loading">Loading attendance...</p></div>
+      </section>
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><h2>Attendance history</h2><span class="manager-panel-note">Latest 100 · full history retained</span></div>
+        <div id="manager-attendance-history" class="manager-list"><p class="manager-loading">Loading attendance history...</p></div>
+      </section>
+      <section class="manager-panel manager-payroll-panel">
+        <div class="manager-panel-heading">
+          <div><h2>Daily hours & monthly payroll</h2><p class="pantry-subtitle">Regular hours are 07:00–22:00; time outside this window and hours beyond 45/week count as overtime at 1.5×. Current duty hours reset each day.</p></div>
+          <label class="manager-month-filter">Pay month <input id="manager-payroll-month" type="month"></label>
+        </div>
+        <div id="manager-payroll-summary" class="manager-list"><p class="manager-loading">Loading payroll...</p></div>
+        <div class="pantry-table-wrap"><table class="pantry-table manager-payroll-table"><thead><tr><th>Staff member</th><th>Role</th><th>Day</th><th>Regular hours</th><th>Overtime</th><th>Gross pay</th></tr></thead><tbody id="manager-payroll-daily"><tr><td colspan="6" class="manager-empty">Loading daily hours...</td></tr></tbody></table></div>
+      </section>
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><h2>Shift management</h2></div>
+        <form id="manager-shift-form" class="manager-form">
+          <input id="manager-shift-name" placeholder="Staff member" required>
+          <input id="manager-shift-role" placeholder="Role" value="Waiter" required>
+          <input id="manager-shift-label" placeholder="Shift e.g. Dinner service" required>
+          <select id="manager-shift-status"><option>Scheduled</option><option>On duty</option><option>Off</option></select>
+          <button class="form-submit" type="submit">Add shift</button>
+        </form>
+        <div id="manager-shifts" class="manager-list"></div>
+      </section>
+    </section>
+    <section id="manager-staff-section" class="manager-section-panel hidden">
+      <section class="manager-panel">
+        <div class="manager-panel-heading">
+          <div><h2>Staff roster</h2><p class="pantry-subtitle">Plan shifts by date and review attendance after each shift.</p></div>
+          <button class="manager-action primary" id="manager-add-staff-button" type="button">Add staff</button>
+        </div>
+        <form id="manager-staff-form" class="manager-form hidden">
+          <input name="firstname" placeholder="First name" maxlength="80" required>
+          <input name="lastname" placeholder="Last name" maxlength="80" required>
+          <select name="role" required><option value="">Staff label</option><option value="chef">Chef</option><option value="waiter">Waiter</option><option value="manager">Manager</option></select>
+          <input name="email" type="email" placeholder="Email (required for sign-in roles)" maxlength="254">
+          <input name="password" type="password" placeholder="Optional password (12+ characters)" minlength="12" maxlength="128" autocomplete="new-password">
+          <label class="staff-pay-field">Hourly pay (R)<input name="hourly_rate" type="number" min="0" step="0.01" required></label>
+          <button class="form-submit" type="submit">Add staff member</button>
+          <button class="manager-action hidden" id="manager-staff-cancel-edit" type="button">Cancel edit</button>
+          <p id="manager-staff-result" class="manager-form-result" role="status" aria-live="polite"></p>
+        </form>
+        <div id="manager-staff-list" class="manager-list"><p class="manager-loading">Loading staff...</p></div>
+      </section>
+      <section class="manager-panel">
+        <div class="manager-panel-heading"><div><h2>Staff login passwords</h2><p class="pantry-subtitle">Generate a fresh password for a staff email. It is shown once; use the history below to see who each password was generated for and whether it was used.</p></div></div>
+        <div class="manager-form">
+          <label class="staff-pay-field" for="manager-password-staff">Staff member</label>
+          <select id="manager-password-staff" required><option value="">Choose a staff member</option></select>
+          <button class="manager-action primary" id="manager-generate-staff-password" type="button">Generate new staff password</button>
+          <div class="staff-pay-field hidden" id="manager-generated-password-field">
+            <label for="manager-generated-password">New password for <span id="manager-generated-password-email"></span></label>
+            <input id="manager-generated-password" type="text" readonly autocomplete="off">
+            <button class="manager-action" id="manager-copy-staff-password" type="button">Copy password</button>
+          </div>
+          <p id="manager-password-result" class="manager-form-result" role="status" aria-live="polite"></p>
+        </div>
+        <h3>Previously generated passwords</h3>
+        <div id="manager-staff-password-history" class="manager-list"><p class="manager-loading">Loading password history...</p></div>
+      </section>
+      <section class="manager-panel">
+        <div class="manager-panel-heading">
+          <div><h2>Weekly schedule</h2><p class="pantry-subtitle">Scheduled staff are marked absent after a shift ends if they have not signed in that day.</p></div>
+          <label class="manager-month-filter">Week of <input id="manager-roster-week" type="date"></label>
+          <button class="manager-action primary" id="manager-roster-export" type="button">Export weekly roster PDF</button>
+        </div>
+        <p id="manager-roster-export-result" class="manager-form-result" role="status" aria-live="polite"></p>
+        <form id="manager-roster-form" class="manager-form">
+          <select name="staff_id" id="manager-roster-staff" required><option value="">Choose staff member</option></select>
+          <input name="work_date" id="manager-roster-date" type="date" required>
+          <input name="shift_label" placeholder="Shift (e.g. Dinner service)" maxlength="120" required>
+          <label class="staff-pay-field">Starts<input name="starts_at" type="time" required></label>
+          <label class="staff-pay-field">Ends<input name="ends_at" type="time" required></label>
+          <button class="form-submit" type="submit">Schedule shift</button>
+          <p id="manager-roster-result" class="manager-form-result" role="status" aria-live="polite"></p>
+        </form>
+        <div id="manager-roster-list" class="manager-list"><p class="manager-loading">Loading weekly schedule...</p></div>
+      </section>
+    </section>
+  </main>
+</div>
+
+
+<!-- ================================================================
+     CHAT PAGE
+     The chatbot interface shown after logging in
+     ================================================================ -->
+<div id="page-chat" class="page chat-page">
+
+  <!-- Chat header bar -->
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <div class="chat-avatar">🤖</div>
+      <div>
+        <h4>DineDesk Assistant</h4>
+        <p>● Online — ready to help</p>
+      </div>
+    </div>
+    <!-- Logout returns user to home page -->
+    <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-window">
+
+    <!-- Scrollable message area — messages appear here -->
+    <div class="chat-messages" id="chat-messages"></div>
+
+    <!-- Quick question suggestions -->
+    <div class="suggestions" id="suggestions">
+      <div class="chip" onclick="sendChip(this)">🍜 What are your top dishes?</div>
+      <div class="chip" onclick="sendChip(this)">💰 What is the average price?</div>
+      <div class="chip" onclick="sendChip(this)">⭐ What do customers say?</div>
+      <div class="chip" onclick="sendChip(this)">🕐 What are your busiest days?</div>
+      <div class="chip" onclick="sendChip(this)">🚗 Do you offer delivery?</div>
+    </div>
+
+    <!-- Input bar at the bottom -->
+    <div class="chat-input-area">
+      <input
+        type="text"
+        class="chat-input"
+        id="chat-input"
+        placeholder="Ask me anything about DineDesk Restaurant..."
+        onkeydown="if(event.key==='Enter') sendMessage()"
+      >
+      <!-- Send button with arrow icon -->
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+  </div>
+</div><!-- end chat page -->
+
+
+<!-- Toast notification element — hidden until JavaScript shows it -->
+<div class="toast" id="toast"></div>
+
+<!-- ================================================================
+     JAVASCRIPT
+     Handles all the interactivity on the page
+     ================================================================ -->
+<script>
+  let currentUser = null;
+  let inactivityTimer = null;
+  let waiterOrderRefreshTimer = null;
+  let managerRefreshTimer = null;
+  const INACTIVITY_LIMIT_MS = 10 * 60 * 1000;
+  const ATTENDED_COMPLAINTS_KEY = 'bundu_attended_complaints';
+
+  // ================================================================
+  // NAVIGATION — showPage controls which page is visible
+  // It hides all pages then shows only the requested one
+  // ================================================================
+  function showPage(name) {
+    // Get all elements with class "page"
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.remove('active'); // hide every page
+    });
+
+    // Show only the requested page by adding "active" class
+    const target = document.getElementById('page-' + name);
+    if (target) {
+      target.classList.add('active');
+      window.scrollTo(0, 0); // scroll to top when changing pages
+      if (name === 'home' || name === 'orders') loadMenuItems();
+      if (name === 'orders') renderOrderPage();
+      if (name === 'waiter-dashboard') {
+        loadWaiterOrders();
+        if (waiterOrderRefreshTimer === null) {
+          waiterOrderRefreshTimer = setInterval(() => {
+            if (document.visibilityState === 'visible'
+              && document.getElementById('page-waiter-dashboard').classList.contains('active')) {
+              loadWaiterOrders();
+            }
+          }, 5000);
+        }
+      } else if (waiterOrderRefreshTimer !== null) {
+        clearInterval(waiterOrderRefreshTimer);
+        waiterOrderRefreshTimer = null;
+      }
+      if (name === 'manager-dashboard') {
+        loadManagerDashboard();
+        loadManagerShifts();
+        loadManagerStaffRoster();
+        if (managerRefreshTimer === null) {
+          managerRefreshTimer = setInterval(() => {
+            if (document.visibilityState === 'visible'
+              && document.getElementById('page-manager-dashboard').classList.contains('active')) {
+              loadManagerShifts();
+              loadManagerStaffRoster();
+            }
+          }, 30000);
+        }
+      } else if (managerRefreshTimer !== null) {
+        clearInterval(managerRefreshTimer);
+        managerRefreshTimer = null;
+      }
+      if (name === 'confirmation') startOrderTracking();
+      else stopOrderTracking();
+      if (name === 'customer-orders') {
+        openCustomerOrderHistory();
+      }
+      const customerHistoryState = getCustomerOrderHistoryState();
+      if (name === 'customer-orders' || name === 'confirmation' && customerHistoryState?.token) {
+        if (name === 'confirmation') loadCustomerOrderHistory();
+        if (customerOrderHistoryTimer === null) {
+          customerOrderHistoryTimer = setInterval(refreshCustomerOrderHistory, 10000);
+        }
+      } else if (customerOrderHistoryTimer !== null) {
+        clearInterval(customerOrderHistoryTimer);
+        customerOrderHistoryTimer = null;
+      }
+    }
+  }
+
+  async function refreshManagerDashboard() {
+    const button = document.getElementById('manager-dashboard-refresh');
+    const activeSection = document.querySelector('[data-manager-section].manager-tab.active')?.dataset.managerSection;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Refreshing...';
+    }
+    try {
+      await loadManagerDashboard();
+      if (activeSection === 'manager-pantry-section') await loadPantryData();
+      if (activeSection === 'manager-shifts-section') await loadManagerShifts();
+      if (activeSection === 'manager-staff-section') await loadManagerStaffRoster();
+    } catch (error) {
+      showToast(error.message || 'Could not refresh the management suite.');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Refresh';
+      }
+    }
+  }
+
+  const API_BASE = 'http://127.0.0.1:5000/api';
+  const AUTH_STATE_KEY = 'bundu_auth';
+  const LEGACY_AUTH_TOKEN_KEY = 'bundu_auth_token';
+  const ORDER_TRACKING_KEY = 'bundu_order_tracking';
+  const CUSTOMER_ORDER_HISTORY_KEY = 'bundu_customer_order_history';
+  let pantryItems = [];
+  let pantrySort = { field: 'name', direction: 'asc' };
+
+  function getAuthState() {
+    try {
+      const state = JSON.parse(sessionStorage.getItem(AUTH_STATE_KEY) || 'null');
+      if (state && typeof state.token === 'string' && state.token) return state;
+    } catch (error) {
+      sessionStorage.removeItem(AUTH_STATE_KEY);
+    }
+    const legacyToken = sessionStorage.getItem(LEGACY_AUTH_TOKEN_KEY);
+    return legacyToken ? { token: legacyToken, role: null, user: null } : null;
+  }
+
+  function saveAuthState(token, user) {
+    sessionStorage.setItem(AUTH_STATE_KEY, JSON.stringify({
+      token,
+      role: user.role,
+      user
+    }));
+    sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+  }
+
+  function clearAuthState() {
+    sessionStorage.removeItem(AUTH_STATE_KEY);
+    sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+  }
+
+  function authHeaders(headers = {}) {
+    const token = getAuthState()?.token;
+    return token ? { ...headers, Authorization: `Bearer ${token}` } : headers;
+  }
+
+  async function apiFetch(url, options = {}) {
+    const response = await fetch(url, options);
+    if (response.status !== 401) return response;
+
+    const headers = new Headers(options.headers || (url instanceof Request ? url.headers : undefined));
+    if (!headers.has('Authorization')) return response;
+
+    const result = await response.clone().json().catch(() => null);
+    if (result?.code === 'invalid_or_expired_token' && getAuthState()?.token) {
+      console.warn('Signing out after invalid or expired token response:', options.method || 'GET', url);
+      clearAuthState();
+      currentUser = null;
+      clearTimeout(inactivityTimer);
+      showToast('Your staff session expired. Sign in again to continue.');
+    }
+    return response;
+  }
+
+  function orderTrackingHeaders(token, headers = {}) {
+    return token ? { ...headers, 'X-Order-Tracking-Token': token } : headers;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
+  let latestOrder = null;
+  let orderTrackingTimer = null;
+  let reservationRefreshTimer = null;
+  let customerOrderHistoryTimer = null;
+  let ratingPromptShownForOrder = null;
+  let customerOrders = [];
+
+  function getCustomerOrderHistoryState() {
+    try {
+      return JSON.parse(sessionStorage.getItem(CUSTOMER_ORDER_HISTORY_KEY) || 'null');
+    } catch (error) {
+      sessionStorage.removeItem(CUSTOMER_ORDER_HISTORY_KEY);
+      return null;
+    }
+  }
+
+  function renderCustomerOrderHistory(orders) {
+    const container = document.getElementById('customer-order-history-list');
+    if (!container) return;
+    customerOrders = orders;
+    if (!orders.length) {
+      container.innerHTML = '<p class="customer-order-history-empty">No previous orders were found for this email address.</p>';
+      renderConfirmationOrderHistory(orders);
+      return;
+    }
+    container.innerHTML = orders.map(customerOrderHistoryCard).join('');
+    renderConfirmationOrderHistory(orders);
+  }
+
+  function customerOrderHistoryCard(order) {
+    const canRequestPayment = order.order_type === 'Dine in'
+      && order.status === 'Served'
+      && ['cash', 'card'].includes(order.payment_method)
+      && !order.payment_requested;
+    const paymentCopy = order.payment_requested
+      ? '<p class="customer-history-payment-requested">Your waiter has been asked to bring the bill.</p>'
+      : canRequestPayment
+        ? `<button class="lux-button lux-button-dark" type="button" data-customer-history-pay="${order.id}">Call waiter to pay</button>`
+        : '';
+    return `<article class="customer-order-history-card">
+        <div class="customer-order-history-heading"><div><p class="menu-eyebrow">${escapeHtml(order.order_number)}</p><h2>${escapeHtml(formatOrderDateTime(order.created_at))}</h2></div><span class="customer-history-status">${escapeHtml(order.status)}</span></div>
+        <p class="customer-order-history-items">${(order.items || []).map((item) => `${escapeHtml(item.quantity)} × ${escapeHtml(item.name)}`).join(', ')}</p>
+        <div class="customer-order-history-meta"><span>${escapeHtml(order.order_type)}${order.table_number ? ` · Table ${escapeHtml(order.table_number)}` : ''}</span><strong>R${Number(order.total).toFixed(2)}</strong><span>${escapeHtml(formatPaymentMethod(order.payment_method))}</span></div>
+        ${paymentCopy}
+      </article>`;
+  }
+
+  function renderConfirmationOrderHistory(orders) {
+    const state = getCustomerOrderHistoryState();
+    const message = document.getElementById('confirmation-order-history-message');
+    const container = document.getElementById('confirmation-order-history-list');
+    if (!message || !container) return;
+    if (!state?.token) {
+      message.textContent = 'Verify your email to see your other orders and their latest status.';
+      container.replaceChildren();
+      return;
+    }
+    message.textContent = `Showing past orders for ${state.email}.`;
+    const previousOrders = orders.filter((order) => String(order.id) !== String(latestOrder?.id));
+    container.innerHTML = previousOrders.length
+      ? previousOrders.map(customerOrderHistoryCard).join('')
+      : '<p class="customer-order-history-empty">There are no earlier orders for this email yet.</p>';
+  }
+
+  async function loadCustomerOrderHistory() {
+    const state = getCustomerOrderHistoryState();
+    const message = document.getElementById('customer-order-history-message');
+    if (!state?.token) return;
+    try {
+      const response = await fetch(`${API_BASE}/customer/orders`, {
+        headers: { Authorization: `Bearer ${state.token}` }
+      });
+      const result = await response.json();
+      if (response.status === 401) {
+        sessionStorage.removeItem(CUSTOMER_ORDER_HISTORY_KEY);
+        customerOrders = [];
+        document.getElementById('customer-order-history-list').replaceChildren();
+        renderConfirmationOrderHistory([]);
+        if (document.getElementById('page-customer-orders').classList.contains('active')) {
+          openCustomerOrderHistory();
+        }
+        document.getElementById('customer-order-history-intro').textContent = 'Your verification expired. Verify your email again to view order history.';
+        if (message) message.textContent = 'Your verification expired. Verify your email again to view order history.';
+        return;
+      }
+      if (!response.ok) throw new Error(result.error || 'Could not load your order history.');
+      renderCustomerOrderHistory(result);
+      if (message) message.textContent = '';
+    } catch (error) {
+      if (message) message.textContent = error.message || 'Could not load your order history.';
+    }
+  }
+
+  function openCustomerOrderHistory() {
+    const state = getCustomerOrderHistoryState();
+    const intro = document.getElementById('customer-order-history-intro');
+    const emailInput = document.getElementById('customer-order-history-email');
+    const latestEmail = latestOrder?.customer_email
+      || window.dineDeskPublic?.getCustomerOrderHistoryEmail();
+    if (emailInput && !emailInput.value) {
+      emailInput.value = state?.email || (latestEmail && latestEmail !== 'Not provided' ? latestEmail : '');
+    }
+    if (state?.token) {
+      if (intro) intro.textContent = `You're viewing orders for ${state.email}. Status updates refresh automatically.`;
+      document.getElementById('customer-order-history-email-form').hidden = true;
+      document.getElementById('customer-order-history-code-form').hidden = true;
+      document.getElementById('customer-order-history-signout').hidden = false;
+      loadCustomerOrderHistory();
+    } else {
+      if (intro) intro.textContent = 'Verify your email to see your past orders and follow their latest status.';
+      document.getElementById('customer-order-history-email-form').hidden = false;
+      document.getElementById('customer-order-history-code-form').hidden = true;
+      document.getElementById('customer-order-history-signout').hidden = true;
+      document.getElementById('customer-order-history-list').replaceChildren();
+    }
+  }
+
+  async function refreshCustomerOrderHistory() {
+    if (document.visibilityState === 'visible'
+      && (document.getElementById('page-customer-orders').classList.contains('active')
+        || document.getElementById('page-confirmation').classList.contains('active'))) {
+      await loadCustomerOrderHistory();
+    }
+  }
+
+  document.getElementById('customer-order-history-email-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const email = document.getElementById('customer-order-history-email').value.trim().toLowerCase();
+    const message = document.getElementById('customer-order-history-message');
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    button.disabled = true;
+    message.textContent = 'Sending a verification code…';
+    try {
+      const response = await fetch(`${API_BASE}/customer/order-history/request-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not send a verification code.');
+      document.getElementById('customer-order-history-code-form').hidden = false;
+      document.getElementById('customer-order-history-code').focus();
+      message.textContent = result.message || 'If this email can receive a code, one will arrive shortly.';
+    } catch (error) {
+      message.textContent = error.message || 'Could not send a verification code.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById('customer-order-history-code-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const email = document.getElementById('customer-order-history-email').value.trim().toLowerCase();
+    const code = document.getElementById('customer-order-history-code').value.trim();
+    const message = document.getElementById('customer-order-history-message');
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    button.disabled = true;
+    message.textContent = 'Verifying your email…';
+    try {
+      const response = await fetch(`${API_BASE}/customer/order-history/verify-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not verify your email.');
+      sessionStorage.setItem(CUSTOMER_ORDER_HISTORY_KEY, JSON.stringify(result));
+      document.getElementById('customer-order-history-email-form').hidden = true;
+      form.hidden = true;
+      document.getElementById('customer-order-history-signout').hidden = false;
+      document.getElementById('customer-order-history-intro').textContent = `You're viewing orders for ${result.email}. Status updates refresh automatically.`;
+      message.textContent = 'Email verified. Your order history is below.';
+      await loadCustomerOrderHistory();
+    } catch (error) {
+      message.textContent = error.message || 'Could not verify your email.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById('customer-order-history-signout').addEventListener('click', () => {
+    sessionStorage.removeItem(CUSTOMER_ORDER_HISTORY_KEY);
+    customerOrders = [];
+    document.getElementById('customer-order-history-code').value = '';
+    document.getElementById('customer-order-history-message').textContent = '';
+    openCustomerOrderHistory();
+  });
+
+  document.addEventListener('click', async (event) => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest('[data-customer-history-pay]');
+    if (!button) return;
+    const state = getCustomerOrderHistoryState();
+    if (!state?.token) return;
+    button.disabled = true;
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(button.dataset.customerHistoryPay)}/request-payment`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${state.token}` }
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not notify your waiter.');
+      const order = customerOrders.find((item) => String(item.id) === button.dataset.customerHistoryPay);
+      if (order) order.payment_requested = result.payment_requested;
+      await loadCustomerOrderHistory();
+    } catch (error) {
+      const card = button.closest('.customer-order-history-card');
+      const notice = document.createElement('p');
+      notice.className = 'customer-history-error';
+      notice.textContent = error.message || 'Could not notify your waiter.';
+      card?.appendChild(notice);
+      button.disabled = false;
+    }
+  });
+
+  async function restoreOrderConfirmation() {
+    const orderId = new URLSearchParams(window.location.search).get('order');
+    let savedOrder = null;
+    try {
+      savedOrder = JSON.parse(sessionStorage.getItem(ORDER_TRACKING_KEY) || 'null');
+    } catch (error) {
+      sessionStorage.removeItem(ORDER_TRACKING_KEY);
+    }
+    if (!orderId || !savedOrder || String(savedOrder.id) !== orderId || !savedOrder.tracking_token) return;
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`, {
+        headers: orderTrackingHeaders(savedOrder.tracking_token)
+      });
+      if (!response.ok) return;
+      latestOrder = { ...await response.json(), tracking_token: savedOrder.tracking_token };
+      renderOrderConfirmation();
+      dispatchLatestOrder();
+      restoreCustomerReservation();
+      showPage('confirmation');
+    } catch (error) {
+      showToast('Could not load the order confirmation.');
+    }
+  }
+
+  function renderOrderConfirmation() {
+    if (!latestOrder) return;
+    document.getElementById('confirmed-order-number').textContent = `Order #${latestOrder.order_number}`;
+    document.getElementById('confirmed-order-total').textContent = `Total: R${Number(latestOrder.total).toFixed(2)}`;
+    document.getElementById('confirmed-order-status').textContent = `Status: ${latestOrder.status}`;
+    document.getElementById('confirmed-order-type').textContent = latestOrder.order_type === 'Dine in'
+      ? (latestOrder.table_number ? `Table: ${latestOrder.table_number}` : 'Table: Waiting for waiter assignment')
+      : `Order type: ${latestOrder.order_type}`;
+    document.getElementById('confirmed-order-payment-method').textContent = `Payment method: ${formatPaymentMethod(latestOrder.payment_method)}`;
+    document.getElementById('confirmed-order-time').textContent = `Placed: ${formatOrderDateTime(latestOrder.created_at)}`;
+    renderCustomerOrderProgress();
+    const reservationSummary = document.getElementById('customer-reservation-summary');
+    const reservationButton = document.getElementById('make-table-reservation-button');
+    if (latestOrder.reservation) {
+      const reservation = latestOrder.reservation;
+      reservationSummary.textContent = `Table ${reservation.table_number} · ${formatOrderDateTime(reservation.starts_at)} · R50 reservation fee ${reservation.fee_paid ? 'paid' : 'due to your waiter'}.`;
+      reservationButton.hidden = true;
+    } else {
+      reservationSummary.textContent = 'Reserve a table for a chosen time. A separate R50 booking fee is payable to your waiter.';
+      reservationButton.hidden = false;
+    }
+    const isPaid = latestOrder.status === 'Paid';
+    const paymentPanel = document.getElementById('payment-request-panel');
+    const requestButton = document.getElementById('request-payment-button');
+    const paymentCopy = document.getElementById('payment-request-copy');
+    const loyaltyCard = document.getElementById('loyalty-thank-you');
+    document.getElementById('confirmation-title').textContent = isPaid ? 'Thank you for dining with us' : 'Order received';
+    document.querySelector('.confirmation-lead').textContent = isPaid
+      ? 'Your waiter has confirmed your payment. We hope to welcome you back soon.'
+      : 'Your order has been successfully sent to the DineDesk Kitchen.';
+    paymentPanel.hidden = isPaid || latestOrder.order_type !== 'Dine in'
+      || !['cash', 'card'].includes(latestOrder.payment_method);
+    requestButton.hidden = Boolean(latestOrder.payment_requested);
+    requestButton.disabled = latestOrder.status !== 'Served' || Boolean(latestOrder.payment_requested);
+    paymentCopy.textContent = latestOrder.payment_requested
+      ? `Your waiter has been asked to collect payment at table ${latestOrder.table_number}.`
+      : latestOrder.status === 'Served'
+        ? 'Finished dining? Ask your waiter to bring the bill to your table.'
+        : 'The payment request button will be ready when your order has been served.';
+    loyaltyCard.hidden = !isPaid;
+    document.getElementById('loyalty-points-copy').textContent =
+      `You earned ${Math.floor(Number(latestOrder.total) / 10)} loyalty points on order ${latestOrder.order_number}.`;
+    const ratingSection = document.getElementById('confirmation-rating');
+    const ratingButton = document.getElementById('rate-order-button');
+    const ratingResult = document.getElementById('rating-result');
+    const canRate = ['Completed', 'Paid'].includes(latestOrder.status) && latestOrder.rating == null;
+    ratingButton.hidden = !canRate;
+    if (latestOrder.rating != null) {
+      ratingSection.close();
+      ratingResult.textContent = `Thank you for rating this order ${latestOrder.rating} out of 5.`;
+    } else if (!canRate) {
+      ratingSection.close();
+      ratingResult.textContent = '';
+    } else if (latestOrder.status !== 'Paid' && ratingPromptShownForOrder !== latestOrder.id) {
+      ratingPromptShownForOrder = latestOrder.id;
+      ratingSection.showModal();
+    }
+    renderComplaintOrder();
+  }
+
+  function renderCustomerOrderProgress() {
+    const progressList = document.getElementById('customer-order-progress-list');
+    if (!progressList || !latestOrder) return;
+    const steps = latestOrder.order_type === 'Dine in'
+      ? ['Received', 'Preparing', 'Ready', 'Served', 'Paid']
+      : ['Received', 'Preparing', 'Ready', 'Completed'];
+    const currentStep = steps.indexOf(latestOrder.status);
+    progressList.innerHTML = latestOrder.status === 'Cancelled'
+      ? '<li class="order-progress-cancelled" aria-current="step">Order cancelled</li>'
+      : steps.map((step, index) => `<li class="${index < currentStep ? 'complete' : index === currentStep ? 'current' : ''}" ${index === currentStep ? 'aria-current="step"' : ''}><span>${index < currentStep ? '✓' : index + 1}</span><small>${escapeHtml(step)}</small></li>`).join('');
+  }
+
+  function localDateTimeValue(date) {
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  }
+
+  function openTableReservation() {
+    if (!latestOrder) return;
+    const dialog = document.getElementById('table-reservation-dialog');
+    const startInput = document.getElementById('reservation-start');
+    const now = new Date();
+    const earliest = new Date(now.getTime() + 30 * 60 * 1000);
+    earliest.setMinutes(earliest.getMinutes() < 30 ? 30 : 0, 0, 0);
+    if (earliest <= now) earliest.setHours(earliest.getHours() + 1);
+    startInput.min = localDateTimeValue(earliest);
+    startInput.value = localDateTimeValue(earliest);
+    document.getElementById('reservation-result').textContent = '';
+    dialog.showModal();
+    loadReservationTables();
+  }
+
+  function closeTableReservation() {
+    document.getElementById('table-reservation-dialog').close();
+  }
+
+  async function loadReservationTables() {
+    const startInput = document.getElementById('reservation-start');
+    const tableSelect = document.getElementById('reservation-table');
+    if (!startInput.value) return;
+    tableSelect.innerHTML = '<option value="">Loading available tables…</option>';
+    try {
+      const startsAt = new Date(startInput.value);
+      if (Number.isNaN(startsAt.getTime())) throw new Error('Choose a valid reservation time.');
+      const response = await fetch(`${API_BASE}/public/tables/available?starts_at=${encodeURIComponent(startsAt.toISOString())}`);
+      const tables = await response.json();
+      if (!response.ok) throw new Error(tables.error || 'Could not load available tables.');
+      tableSelect.innerHTML = tables.length
+        ? '<option value="">Choose a table</option>' + tables.map((table) => `<option value="${escapeHtml(table)}">Table ${escapeHtml(table)}</option>`).join('')
+        : '<option value="">No tables available at this time</option>';
+    } catch (error) {
+      tableSelect.innerHTML = '<option value="">Tables unavailable</option>';
+      document.getElementById('reservation-result').textContent = error instanceof TypeError
+        ? 'Could not connect to the reservation service. Restart the DineDesk backend and try again.'
+        : error.message || 'Could not load available tables.';
+    }
+  }
+
+  document.getElementById('reservation-start').addEventListener('change', loadReservationTables);
+
+  async function submitTableReservation(event) {
+    event.preventDefault();
+    if (!latestOrder) return;
+    const submitButton = document.getElementById('reservation-submit');
+    const result = document.getElementById('reservation-result');
+    submitButton.disabled = true;
+    try {
+      const startsAt = new Date(document.getElementById('reservation-start').value);
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}/reservations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tracking_token: latestOrder.tracking_token,
+          starts_at: startsAt.toISOString(),
+          table_number: document.getElementById('reservation-table').value
+        })
+      });
+      const reservation = await response.json();
+      if (!response.ok) throw new Error(reservation.error || 'Could not reserve that table.');
+      latestOrder = { ...latestOrder, reservation };
+      sessionStorage.setItem(ORDER_TRACKING_KEY, JSON.stringify(latestOrder));
+      renderOrderConfirmation();
+      closeTableReservation();
+      showToast(`Table ${reservation.table_number} reserved. R50 is due to your waiter.`);
+    } catch (error) {
+      result.textContent = error instanceof TypeError
+        ? 'Could not connect to the reservation service. Restart the DineDesk backend and try again.'
+        : error.message || 'Could not reserve that table.';
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  async function refreshCustomerReservation(showErrors = true) {
+    if (!latestOrder?.id || !latestOrder?.tracking_token) return;
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}/reservation`, {
+        headers: orderTrackingHeaders(latestOrder.tracking_token)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not restore the reservation.');
+      latestOrder = { ...latestOrder, reservation: result.reservation || null };
+      renderOrderConfirmation();
+    } catch (error) {
+      if (showErrors) showToast(error.message || 'Could not restore the table reservation.');
+    }
+  }
+
+  function restoreCustomerReservation() {
+    return refreshCustomerReservation();
+  }
+
+  function toggleOrderRating() {
+    const section = document.getElementById('confirmation-rating');
+    if (!section.open) section.showModal();
+    document.getElementById('order-rating').focus();
+  }
+
+  function closeOrderRating() {
+    document.getElementById('confirmation-rating').close();
+  }
+
+  async function submitOrderRating(event) {
+    event.preventDefault();
+    if (!latestOrder || !['Completed', 'Paid'].includes(latestOrder.status)) return;
+    const result = document.getElementById('rating-result');
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}/rating`, {
+        method: 'POST',
+        headers: orderTrackingHeaders(latestOrder.tracking_token, { 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ rating: Number(document.getElementById('order-rating').value) })
+      });
+      const order = await response.json();
+      if (!response.ok) throw new Error(order.error || 'Could not submit your rating.');
+      latestOrder = { ...latestOrder, ...order };
+      sessionStorage.setItem(ORDER_TRACKING_KEY, JSON.stringify(latestOrder));
+      dispatchLatestOrder();
+      renderOrderConfirmation();
+      showToast('Thank you for rating your order');
+    } catch (error) {
+      result.textContent = error.message;
+    }
+  }
+
+  function formatOrderDateTime(value) {
+    if (!value) return 'Date and time unavailable';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Date and time unavailable' : date.toLocaleString('en-ZA', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+  }
+
+  function isToday(value) {
+    if (!value) return false;
+    const date = new Date(value);
+    const today = new Date();
+    return !Number.isNaN(date.getTime()) && date.toDateString() === today.toDateString();
+  }
+
+  function startOrderTracking() {
+    stopOrderTracking();
+    if (!latestOrder) return;
+    refreshOrderStatus();
+    orderTrackingTimer = setInterval(refreshOrderStatus, 5000);
+    reservationRefreshTimer = setInterval(() => {
+      if (latestOrder?.reservation) refreshCustomerReservation(false);
+    }, 30000);
+  }
+
+  function stopOrderTracking() {
+    if (orderTrackingTimer) {
+      clearInterval(orderTrackingTimer);
+      orderTrackingTimer = null;
+    }
+    if (reservationRefreshTimer) {
+      clearInterval(reservationRefreshTimer);
+      reservationRefreshTimer = null;
+    }
+  }
+
+  async function refreshOrderStatus() {
+    if (!latestOrder) return;
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}`, {
+        headers: orderTrackingHeaders(latestOrder.tracking_token)
+      });
+      if (!response.ok) return;
+      latestOrder = { ...latestOrder, ...await response.json() };
+      sessionStorage.setItem(ORDER_TRACKING_KEY, JSON.stringify(latestOrder));
+      dispatchLatestOrder();
+      renderOrderConfirmation();
+    } catch (error) {
+      // Keep the last known order state visible if the service is briefly unavailable.
+    }
+  }
+
+  function dispatchLatestOrder() {
+    window.dispatchEvent(new CustomEvent('dinedesk:order-updated', { detail: latestOrder }));
+  }
+
+  async function requestWaiterToPay() {
+    if (!latestOrder) return;
+    const button = document.getElementById('request-payment-button');
+    button.disabled = true;
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}/request-payment`, {
+        method: 'POST',
+        headers: orderTrackingHeaders(latestOrder.tracking_token)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not notify your waiter.');
+      latestOrder = { ...latestOrder, ...result };
+      sessionStorage.setItem(ORDER_TRACKING_KEY, JSON.stringify(latestOrder));
+      dispatchLatestOrder();
+      renderOrderConfirmation();
+    } catch (error) {
+      showToast(error.message || 'Could not notify your waiter.');
+      button.disabled = false;
+    }
+  }
+  function renderComplaintOrder() {
+    const summary = document.getElementById('complaint-order-summary');
+    if (!summary || !latestOrder) return;
+    summary.innerHTML = `<strong>Order #${escapeHtml(latestOrder.order_number)}</strong><span>${latestOrder.items.map((item) => `${escapeHtml(item.quantity)} x ${escapeHtml(item.name)}`).join(', ')}</span>`;
+  }
+
+  function toggleComplaintForm() {
+    const complaintSection = document.getElementById('confirmation-complaint');
+    const complaintButton = document.querySelector('.confirmation-complaint-button');
+    complaintSection.hidden = !complaintSection.hidden;
+    complaintButton.textContent = complaintSection.hidden ? 'Make a complaint' : 'Hide complaint form';
+    if (!complaintSection.hidden) {
+      renderComplaintOrder();
+      document.getElementById('complaint-category').focus();
+    }
+  }
+
+  async function submitComplaint(event) {
+    event.preventDefault();
+    const category = document.getElementById('complaint-category').value;
+    const severity = document.getElementById('complaint-severity').value;
+    const identityMode = document.getElementById('complaint-identity').value || 'anonymous';
+    const customerEmail = identityMode === 'add_email' ? document.getElementById('complaint-email').value.trim() : '';
+    const description = document.getElementById('complaint-input').value.trim();
+    const result = document.getElementById('complaint-result');
+    if (!latestOrder) { result.textContent = 'A completed order is required before reporting a problem.'; return; }
+
+    try {
+      const response = await fetch(`${API_BASE}/complaints`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: latestOrder.id, tracking_token: latestOrder.tracking_token, category, severity, description, identity_mode: identityMode, customer_email: customerEmail })
+      });
+      const complaint = await response.json();
+      if (!response.ok) throw new Error(complaint.error || 'Could not submit complaint.');
+      document.getElementById('complaint-input').value = '';
+      document.getElementById('complaint-email').value = '';
+      document.getElementById('complaint-identity').value = 'anonymous';
+      document.getElementById('complaint-email-group').hidden = true;
+      result.textContent = `Complaint submitted. Reference: ${complaint.reference}`;
+      showToast(`Complaint ${complaint.reference} submitted`);
+      returnHome();
+    } catch (error) {
+      result.textContent = error.message;
+    }
+  }
+
+  document.getElementById('complaint-identity').addEventListener('change', (event) => {
+    const emailGroup = document.getElementById('complaint-email-group');
+    emailGroup.hidden = event.target.value !== 'add_email';
+    if (event.target.value !== 'add_email') document.getElementById('complaint-email').value = '';
+  });
+
+  // ================================================================
+  // ORDERING — menu items and shopping cart
+  // ================================================================
+  let menuItems = [];
+  let activePromotions = [];
+
+  function applyPromotionToMenuItem(item) {
+    const promotion = activePromotions.find((entry) => entry.menu_name === item.name);
+    const discountPercent = promotion ? Number(promotion.discount_percent) : 0;
+    return {
+      ...item,
+      discountPercent,
+      currentPrice: discountPercent ? Math.round(Number(item.price) * (100 - discountPercent)) / 100 : Number(item.price)
+    };
+  }
+
+  function addMenuItemToCustomerMenus() {
+    loadMenuItems();
+  }
+
+  async function loadMenuItems() {
+    try {
+      const [menuResponse, promotionsResponse] = await Promise.all([
+        fetch(`${API_BASE}/menu-items/signature`),
+        fetch(`${API_BASE}/promotions/active`)
+      ]);
+      if (!menuResponse.ok || !promotionsResponse.ok) throw new Error();
+      const [items, promotions] = await Promise.all([menuResponse.json(), promotionsResponse.json()]);
+      activePromotions = promotions;
+      menuItems = items.map(applyPromotionToMenuItem);
+      const previousCartSize = cart.length;
+      cart = cart.filter((cartItem) => menuItems.some((item) => item.name === cartItem.name)).map((cartItem) => {
+        const menuItem = menuItems.find((item) => item.name === cartItem.name);
+        return { ...cartItem, price: menuItem.currentPrice, image: resolveMenuImage(menuItem) };
+      });
+      if (cart.length !== previousCartSize) showToast('Your previous selection included dishes no longer on the menu. Your basket has been updated.');
+      saveCart();
+      renderHomeMenu();
+      renderOrderMenu();
+      renderCart();
+    } catch (error) {
+      showToast('Could not load the menu. Start the Python backend first.');
+    }
+  }
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'bundu_menu_items_updated') loadMenuItems();
+  });
+
+  const CART_VERSION_KEY = 'bundu_cart_version';
+  const CART_VERSION = '2';
+  const PAYMENT_METHOD_KEY = 'bundu_payment_method';
+  const PAYMENT_METHOD_VERSION_KEY = 'bundu_payment_method_version';
+  const PAYMENT_METHOD_VERSION = '2';
+
+  function formatPaymentMethod(value) {
+    return value === 'card' ? 'Card' : value === 'online' ? 'Online' : 'Cash';
+  }
+
+  function normalizeSavedPaymentMethod(value) {
+    if (value === 'online') return 'online';
+    if (value === 'card' || value === 'split_bill') return 'card';
+    if (value === 'cash' || value === 'pay_individual') return 'cash';
+    return 'cash';
+  }
+
+  function loadSavedPaymentMethod() {
+    const saved = normalizeSavedPaymentMethod(localStorage.getItem(PAYMENT_METHOD_KEY));
+    localStorage.setItem(PAYMENT_METHOD_KEY, saved);
+    localStorage.setItem(PAYMENT_METHOD_VERSION_KEY, PAYMENT_METHOD_VERSION);
+    return saved;
+  }
+
+  function loadCart() {
+    let savedCart;
+    try {
+      savedCart = JSON.parse(localStorage.getItem('bundu_cart') || '[]');
+    } catch (error) {
+      savedCart = [];
+    }
+    if (!Array.isArray(savedCart)) savedCart = [];
+    const cleanCart = savedCart.filter((item) =>
+      item && typeof item.name === 'string' && item.name.trim()
+      && Number.isFinite(Number(item.price)) && Number(item.price) >= 0
+      && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0
+    ).map((item) => ({
+      name: item.name,
+      price: Number(item.price),
+      icon: typeof item.icon === 'string' ? item.icon : '',
+      image: typeof item.image === 'string' ? item.image : '',
+      quantity: Number(item.quantity)
+    }));
+    localStorage.setItem('bundu_cart', JSON.stringify(cleanCart));
+    localStorage.setItem(CART_VERSION_KEY, CART_VERSION);
+    return cleanCart;
+  }
+
+  let cart = loadCart();
+  const paymentMethodSelect = document.getElementById('payment-method');
+  if (paymentMethodSelect) {
+    paymentMethodSelect.value = loadSavedPaymentMethod();
+    paymentMethodSelect.addEventListener('change', () => savePaymentMethod(paymentMethodSelect.value));
+  }
+
+  function savePaymentMethod(value) {
+    const paymentMethod = normalizeSavedPaymentMethod(value);
+    localStorage.setItem(PAYMENT_METHOD_KEY, paymentMethod);
+    localStorage.setItem(PAYMENT_METHOD_VERSION_KEY, PAYMENT_METHOD_VERSION);
+    return paymentMethod;
+  }
+
+  const MENU_IMAGES = {
+    roll: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=85',
+    nigiri: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=900&q=85',
+    sashimi: 'https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=900&q=85',
+    omakase: 'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=900&q=85',
+    side: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=85',
+    drink: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=85',
+    dessert: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=85'
+  };
+
+  function getMenuImage(item) {
+    const category = item.category.toLowerCase();
+    let image = MENU_IMAGES[category] || MENU_IMAGES.side;
+    if (item.image?.startsWith('/uploads/')) {
+      image = `${API_BASE.replace(/\/api$/, '')}${item.image}`;
+    } else if (item.image?.startsWith('https://')) {
+      image = item.image;
+    }
+    return `<img src="${escapeHtml(image)}" alt="${escapeHtml(item.name)}" loading="lazy" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+            <span class="menu-image-fallback" hidden aria-hidden="true">${escapeHtml(item.icon)}</span>`;
+  }
+
+  function renderMenuPrice(item, className) {
+    if (item.discountPercent) {
+      return `<span class="${className} promo-price"><del>R${Number(item.price).toFixed(2)}</del> R${item.currentPrice.toFixed(2)} <small>${item.discountPercent}% off</small></span>`;
+    }
+    return `<span class="${className}">R${Number(item.price).toFixed(2)}</span>`;
+  }
+
+  function saveCart() {
+    localStorage.setItem('bundu_cart', JSON.stringify(cart));
+    localStorage.setItem(CART_VERSION_KEY, CART_VERSION);
+    updateCartCounts();
+  }
+
+  function updateCartCounts() {
+    const count = cart.reduce((total, item) => total + item.quantity, 0);
+    document.querySelectorAll('.cart-count').forEach((badge) => {
+      badge.textContent = count;
+    });
+  }
+
+  function addToCart(button) {
+    const name = button.dataset.name;
+    const price = Number(button.dataset.price);
+    const icon = button.dataset.icon;
+    const image = button.dataset.image;
+    const existing = cart.find((item) => item.name === name);
+
+    if (existing) {
+      existing.quantity += 1;
+      if (image) existing.image = image;
+    } else {
+      cart.push({ name, price, icon, image, quantity: 1 });
+    }
+
+    saveCart();
+    renderCart();
+    showToast(`${name} added to your cart`);
+  }
+
+  function changeQuantity(name, amount) {
+    const item = cart.find((cartItem) => cartItem.name === name);
+    if (!item) return;
+
+    item.quantity += amount;
+    if (item.quantity <= 0) {
+      cart = cart.filter((cartItem) => cartItem.name !== name);
+    }
+
+    saveCart();
+    renderCart();
+  }
+
+  function clearCart() {
+    if (!cart.length) return;
+    cart = [];
+    saveCart();
+    renderCart();
+    showToast('Cart cleared. You can start a new order.');
+  }
+
+  function renderHomeMenu() {
+    window.dispatchEvent(new CustomEvent('dinedesk:menu-updated', { detail: menuItems }));
+  }
+
+  function renderOrderMenu() {
+    window.dispatchEvent(new CustomEvent('dinedesk:menu-updated', { detail: menuItems }));
+  }
+
+  function addToCartByName(name) {
+    const item = menuItems.find((menuItem) => menuItem.name === name);
+    if (!item) return;
+    const image = resolveMenuImage(item);
+    const preload = new Image();
+    preload.src = image;
+    addToCart({ dataset: { ...item, price: item.currentPrice, image } });
+  }
+
+  function resolveMenuImage(item) {
+    const category = String(item.category || '').toLowerCase();
+    const fallback = MENU_IMAGES[category] || MENU_IMAGES.side;
+    if (item.image?.startsWith('/uploads/')) return `${API_BASE.replace(/\/api$/, '')}${item.image}`;
+    return item.image?.startsWith('https://') ? item.image : fallback;
+  }
+
+  function renderCart() {
+    window.dispatchEvent(new CustomEvent('dinedesk:cart-updated', {
+      detail: cart.map((item) => ({ ...item }))
+    }));
+    const container = document.getElementById('cart-items');
+    const empty = document.getElementById('cart-empty');
+    const totalElement = document.getElementById('cart-total');
+    const itemLabel = document.getElementById('cart-item-label');
+    const clearButton = document.getElementById('clear-cart-button');
+    if (!container || !empty || !totalElement || !itemLabel || !clearButton) return;
+
+    const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    itemLabel.textContent = `${itemCount} item${itemCount === 1 ? '' : 's'}`;
+    totalElement.textContent = `R${total.toFixed(2)}`;
+    empty.hidden = cart.length > 0;
+    clearButton.disabled = cart.length === 0;
+
+    container.innerHTML = cart.map((item) => `
+      <div class="cart-item">
+        <span class="cart-item-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+        <div>
+          <div class="cart-item-name">${escapeHtml(item.name)}</div>
+          <div class="cart-item-price">${(() => { const menuItem = menuItems.find((entry) => entry.name === item.name); return menuItem?.discountPercent ? `<del>R${Number(menuItem.price).toFixed(2)}</del> R${item.price.toFixed(2)} each · ${menuItem.discountPercent}% off` : `R${item.price.toFixed(2)} each`; })()}</div>
+          <div class="cart-quantity">
+            <button class="quantity-button" type="button" data-cart-change="-1" data-cart-item="${escapeHtml(item.name)}" aria-label="Remove one ${escapeHtml(item.name)}">-</button>
+            <span>${escapeHtml(item.quantity)}</span>
+            <button class="quantity-button" type="button" data-cart-change="1" data-cart-item="${escapeHtml(item.name)}" aria-label="Add one ${escapeHtml(item.name)}">+</button>
+          </div>
+        </div>
+        <span class="cart-item-total">R${(item.price * item.quantity).toFixed(2)}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderOrderPage() {
+    renderOrderMenu();
+    renderCart();
+    updateCartCounts();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const addButton = event.target.closest('[data-add-menu-item]');
+    if (addButton) {
+      addToCartByName(addButton.dataset.addMenuItem);
+      return;
+    }
+    const quantityButton = event.target.closest('[data-cart-change]');
+    if (quantityButton) {
+      changeQuantity(quantityButton.dataset.cartItem, Number(quantityButton.dataset.cartChange));
+    }
+  });
+
+  async function placeOrder(customerEmail) {
+    if (!cart.length) { showToast('Add an item to your cart first'); return; }
+    const email = typeof customerEmail === 'string' ? customerEmail.trim().toLowerCase() : '';
+    const orderType = document.getElementById('order-type').value;
+    const paymentMethod = savePaymentMethod(document.getElementById('payment-method').value);
+    const orderTypeError = document.getElementById('order-type-error');
+    orderTypeError.textContent = '';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) {
+      orderTypeError.textContent = 'Enter a valid email address to access your order history.';
+      document.getElementById('customer-email').focus();
+      return;
+    }
+    const tableSelect = document.getElementById('table-number');
+    if (orderType === 'Dine in' && (!tableSelect || !tableSelect.value)) {
+      orderTypeError.textContent = 'Choose an available table to continue.';
+      return;
+    }
+    if (paymentMethod === 'online') {
+      orderTypeError.textContent = 'Online payment will be available when Stripe checkout is configured.';
+      return;
+    }
+    if (orderType === 'Delivery') {
+      orderTypeError.textContent = "We currently don't offer delivery";
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart, customer_email: email, order_type: orderType, payment_method: paymentMethod, table_number: tableSelect?.value || null }) });
+      const order = await response.json();
+      if (!response.ok) throw new Error(order.error || 'Could not place order');
+      latestOrder = order;
+      sessionStorage.setItem(ORDER_TRACKING_KEY, JSON.stringify(latestOrder));
+      dispatchLatestOrder();
+      renderOrderConfirmation();
+      cart = []; saveCart(); renderCart();
+      history.pushState({}, '', `?order=${encodeURIComponent(order.id)}`);
+      showPage('confirmation');
+    } catch (error) { showToast(error.message); }
+  }
+
+  function placeAnotherOrder() {
+    history.pushState({}, '', window.location.pathname);
+    showPage('orders');
+  }
+
+  let scrollAnimationFrame = null;
+
+  function scrollToSection(id, duration = 1500) {
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (scrollAnimationFrame !== null) cancelAnimationFrame(scrollAnimationFrame);
+    const start = window.scrollY;
+    const end = Math.max(0, target.getBoundingClientRect().top + start - 76);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.scrollTo(0, end);
+      return;
+    }
+    const startedAt = performance.now();
+    const animate = (now) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      window.scrollTo(0, start + (end - start) * eased);
+      if (progress < 1) scrollAnimationFrame = requestAnimationFrame(animate);
+      else scrollAnimationFrame = null;
+    };
+    scrollAnimationFrame = requestAnimationFrame(animate);
+  }
+
+  function showHomeMenu() {
+    showPage('home');
+    setTimeout(() => scrollToSection('explore-menu'), 80);
+  }
+
+  function returnHome() {
+    history.replaceState({}, '', window.location.pathname);
+    showPage('home');
+  }
+
+  async function viewLatestOrder() {
+    if (!latestOrder) {
+      try {
+        latestOrder = JSON.parse(sessionStorage.getItem(ORDER_TRACKING_KEY) || 'null');
+      } catch (error) {
+        sessionStorage.removeItem(ORDER_TRACKING_KEY);
+      }
+    }
+    if (!latestOrder?.tracking_token) {
+      showToast('There is no recent order to track.');
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}`, {
+        headers: orderTrackingHeaders(latestOrder.tracking_token)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not load your previous order.');
+      latestOrder = { ...latestOrder, ...result };
+      sessionStorage.setItem(ORDER_TRACKING_KEY, JSON.stringify(latestOrder));
+      history.replaceState({}, '', `?order=${encodeURIComponent(latestOrder.id)}`);
+      dispatchLatestOrder();
+      renderOrderConfirmation();
+      showPage('confirmation');
+    } catch (error) {
+      showToast(error.message || 'Could not load your previous order.');
+    }
+  }
+
+  // ================================================================
+  // REGISTER FORM — handles form submission
+  // ================================================================
+  async function handleRegister(event) {
+    event.preventDefault(); // stops the page from reloading
+
+    const firstname = document.getElementById('firstname').value;
+    const lastname  = document.getElementById('lastname').value;
+    const email     = document.getElementById('reg-email').value;
+    const password  = document.getElementById('reg-password').value;
+    const role = document.getElementById('staff-role').value;
+    const registrationKey = document.getElementById('staff-registration-key').value;
+    document.getElementById('staff-registration-key').value = '';
+
+    const payload = { firstname, lastname, email, password, role };
+    if (registrationKey) {
+      payload[role === 'manager' ? 'manager_registration_key' : 'registration_key'] = registrationKey;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(
+          response.status === 429
+            ? 'Too many signup attempts. Please wait before trying again.'
+            : `Registration failed (HTTP ${response.status}). The server returned an unexpected response.`
+        );
+      }
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Registration failed');
+      showToast('Account created! Please sign in.');
+      setTimeout(() => showPage('login'), 1000);
+    } catch (error) {
+      showToast(error.message || 'Could not connect to the authentication service.');
+    }
+  }
+
+  // ================================================================
+  // LOGIN FORM — handles login submission
+  // Checks stored user against entered credentials
+  // ================================================================
+  async function handleLogin(event) {
+    event.preventDefault();
+
+    const email    = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Incorrect email or password');
+      saveAuthState(result.token, result.user);
+      currentUser = result.user;
+      showToast(`Welcome back, ${result.user.firstname}!`);
+      setTimeout(() => routeByRole(result.user), 500);
+    } catch (error) {
+      showToast(error.message || 'Could not connect to the authentication service.');
+    }
+  }
+
+  function routeByRole(user) {
+    if (!user || !['waiter', 'manager'].includes(user.role)) {
+      showToast('This account does not have staff dashboard access.');
+      return;
+    }
+    currentUser = user;
+    if (user.role === 'waiter') {
+      document.getElementById('waiter-welcome').textContent = `Welcome, ${user.firstname}`;
+      showPage('waiter-dashboard');
+    } else if (user.role === 'manager') {
+      document.getElementById('manager-welcome').textContent = `Welcome, ${user.firstname}`;
+      showPage('manager-dashboard');
+    }
+  }
+
+  async function restoreAuthState() {
+    const state = getAuthState();
+    if (!state?.token) return;
+    try {
+      const response = await apiFetch(`${API_BASE}/auth/me`, {
+        headers: authHeaders()
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (result.code !== 'invalid_or_expired_token') {
+          showToast(result.error || 'Could not restore your staff session.');
+        }
+        return;
+      }
+      saveAuthState(state.token, result);
+      routeByRole(result);
+    } catch (error) {
+      showToast('Could not verify your staff session. Check your connection and try again.');
+    }
+  }
+
+  async function loadManagerDashboard() {
+    const stats = document.getElementById('manager-stats');
+    const ordersList = document.getElementById('manager-orders');
+    const menuList = document.getElementById('manager-menu');
+    const complaintsList = document.getElementById('manager-complaints');
+    if (!stats || !ordersList || !menuList || !complaintsList) return;
+
+    stats.innerHTML = '<p class="manager-loading">Loading live restaurant data...</p>';
+    try {
+      await loadManagerPantrySummary();
+      const [ordersResponse, menuResponse, complaintsResponse] = await Promise.all([
+        apiFetch(`${API_BASE}/orders`, { headers: authHeaders() }),
+        fetch(`${API_BASE}/menu-items`),
+        apiFetch(`${API_BASE}/complaints`, { headers: authHeaders() })
+      ]);
+      const orders = await ordersResponse.json();
+      const menu = await menuResponse.json();
+      const complaints = await complaintsResponse.json();
+      window.managerComplaints = complaints;
+      if (!ordersResponse.ok) throw new Error(orders.error || 'Could not load manager orders.');
+      if (!menuResponse.ok) throw new Error(menu.error || 'Could not load menu data.');
+      if (!complaintsResponse.ok) throw new Error(complaints.error || 'Could not load complaints.');
+
+      const revenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+      const recentOrders = [...orders].sort((first, second) =>
+        new Date(second.created_at).getTime() - new Date(first.created_at).getTime()
+      );
+      const activeOrders = orders.filter((order) => !['Completed', 'Paid', 'Cancelled'].includes(order.status));
+      const openComplaints = complaints.filter((complaint) => complaint.status !== 'Resolved');
+      const completedOrders = orders.filter((order) => order.status === 'Completed');
+      const cancelledOrders = orders.filter((order) => order.status === 'Cancelled');
+      stats.innerHTML = [
+        ['Revenue', `R${revenue.toFixed(2)}`],
+        ['Orders', orders.length],
+        ['Active orders', activeOrders.length],
+        ['Open complaints', openComplaints.length],
+        ['Completed', completedOrders.length],
+        ['Cancelled', cancelledOrders.length]
+      ].map(([label, value]) => `<div class="manager-stat"><span>${label}</span><strong>${value}</strong></div>`).join('');
+
+      ordersList.innerHTML = recentOrders.length ? recentOrders.map((order) => `
+        <article class="manager-list-item">
+          <div><strong>${escapeHtml(order.order_number || `Order #${order.id}`)}</strong><span>${escapeHtml(order.order_type)} · ${escapeHtml(order.status)} · Payment: ${formatPaymentMethod(order.payment_method)} · ${order.rating == null ? 'Not rated' : `Customer rating: ${escapeHtml(order.rating)}/5`}</span><small>Placed: ${escapeHtml(formatOrderDateTime(order.created_at))}${order.updated_at && order.updated_at !== order.created_at ? ` · Updated: ${escapeHtml(formatOrderDateTime(order.updated_at))}` : ''}</small></div>
+          <strong>R${Number(order.total || 0).toFixed(2)}</strong>
+        </article>
+      `).join('') : '<p class="manager-empty">No orders recorded yet.</p>';
+
+      const dailyItems = {};
+      orders
+        .filter((order) => order.status !== 'Cancelled' && isToday(order.created_at))
+        .forEach((order) => (order.items || []).forEach((item) => {
+          const quantity = Number(item.quantity || 0);
+          const price = Number(item.price || 0);
+          if (!item.name || quantity <= 0) return;
+          if (!dailyItems[item.name]) dailyItems[item.name] = { quantity: 0, revenue: 0 };
+          dailyItems[item.name].quantity += quantity;
+          dailyItems[item.name].revenue += quantity * price;
+        }));
+      const dailyRanking = Object.entries(dailyItems).sort(([, first], [, second]) => second.quantity - first.quantity || second.revenue - first.revenue);
+      menuList.innerHTML = dailyRanking.length ? dailyRanking.map(([name, performance], index) => `
+        <article class="manager-list-item"><div><strong>${index + 1}. ${escapeHtml(name)}</strong><span>${performance.quantity} item${performance.quantity === 1 ? '' : 's'} sold today</span></div><strong>R${performance.revenue.toFixed(2)}</strong></article>
+      `).join('') : '<p class="manager-empty">No items have been bought today.</p>';
+
+      complaintsList.innerHTML = complaints.length ? complaints.map((complaint) => `
+        <article class="manager-list-item manager-complaint-item"><div><strong>${escapeHtml(complaint.reference || `Complaint #${complaint.id}`)}</strong><span>${escapeHtml(complaint.category || 'General feedback')} · ${escapeHtml(complaint.status)}</span><small>Received: ${escapeHtml(formatOrderDateTime(complaint.created_at))} · ${complaint.identity_mode === 'add_email' ? `Reply email: ${escapeHtml(complaint.customer_email)}` : 'Anonymous complaint'}</small></div><p>${escapeHtml(complaint.description || complaint.message)}</p></article>
+      `).join('') : '<p class="manager-empty">No complaints recorded yet.</p>';
+      setManagerListPreview(ordersList);
+      setManagerListPreview(menuList);
+      setManagerListPreview(complaintsList);
+      const ordersStatus = document.getElementById('manager-orders-status');
+      if (ordersStatus) {
+        ordersStatus.classList.remove('is-offline');
+        ordersStatus.classList.remove('is-connecting');
+        ordersStatus.querySelector('span').textContent = 'Live';
+      }
+      updateComplaintBadge(complaints);
+      renderManagerMenu(menu);
+      renderManagerComplaints(complaints);
+      await Promise.all([loadManagerPromotions(), loadManagerShifts()]);
+    } catch (error) {
+      const message = error.message || 'Could not load manager data.';
+      stats.innerHTML = `<p class="manager-error">${escapeHtml(message)}</p>`;
+      ordersList.innerHTML = menuList.innerHTML = complaintsList.innerHTML = '';
+      const ordersStatus = document.getElementById('manager-orders-status');
+      if (ordersStatus) {
+        ordersStatus.classList.add('is-offline');
+        ordersStatus.classList.remove('is-connecting');
+        ordersStatus.querySelector('span').textContent = 'Unavailable';
+      }
+      showToast(message);
+    }
+  }
+
+  function setManagerListPreview(container, limit = 5) {
+    if (!container) return;
+    const expanded = container.dataset.viewMoreExpanded === 'true';
+    const button = container.querySelector(':scope > .manager-view-more-toggle');
+    const tableBody = container.querySelector(':scope > .staff-table-scroll tbody');
+    const entries = Array.from(tableBody ? tableBody.children : container.children).filter((child) =>
+      !child.matches('.manager-view-more-toggle, .manager-empty, .manager-loading, .manager-error')
+    );
+    if (entries.length <= limit) {
+      button?.remove();
+      delete container.dataset.viewMoreExpanded;
+      entries.forEach((entry) => { entry.hidden = false; });
+      return;
+    }
+
+    entries.forEach((entry, index) => {
+      entry.hidden = !expanded && index >= limit;
+    });
+    const toggle = button || document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'manager-view-more-toggle';
+    toggle.dataset.managerViewMore = '';
+    const collapsedLabel = container.id === 'manager-orders'
+      ? `View all orders (${entries.length})`
+      : container.id === 'manager-menu'
+        ? `View all items (${entries.length})`
+        : `View more (${entries.length - limit})`;
+    toggle.textContent = expanded ? 'View less' : collapsedLabel;
+    if (!button) container.appendChild(toggle);
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const toggle = event.target.closest('[data-manager-view-more]');
+    if (!toggle) return;
+    const list = toggle.parentElement;
+    if (!list) return;
+    list.dataset.viewMoreExpanded = list.dataset.viewMoreExpanded !== 'true' ? 'true' : 'false';
+    setManagerListPreview(list);
+  });
+
+    async function loadManagerPantrySummary() {
+      const container = document.getElementById('manager-pantry-summary');
+      if (!container) return;
+      try {
+        const response = await apiFetch(`${API_BASE}/pantry`, { headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not load pantry summary.');
+        const summary = result.summary;
+        container.innerHTML = [
+          ['Total items', summary.total_items],
+          ['Low stock', summary.low_stock],
+          ['Out of stock', summary.out_of_stock],
+          ['Expiring within 7 days', summary.expiring_soon]
+        ].map(([label, value]) => `<div class="pantry-summary-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+        const alerts = result.items.filter((item) => ['Low Stock', 'Out of Stock', 'Expired', 'Expiring Soon'].includes(item.status));
+        if (alerts.length) container.insertAdjacentHTML('beforeend', `<p class="pantry-summary-alert">${alerts.length} item${alerts.length === 1 ? '' : 's'} need attention in the pantry.</p>`);
+      } catch (error) {
+        container.innerHTML = `<p class="manager-error">${escapeHtml(error.message || 'Could not load pantry summary.')}</p>`;
+      }
+    }
+
+    function formatPantryDate(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+    }
+
+    function formatPantryTimestamp(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+    }
+
+    function renderPantryItems() {
+      const tbody = document.getElementById('pantry-items');
+      const query = document.getElementById('pantry-search').value.trim().toLowerCase();
+      const category = document.getElementById('pantry-filter-category').value;
+      const supplier = document.getElementById('pantry-filter-supplier').value;
+      const status = document.getElementById('pantry-filter-status').value;
+      const visible = pantryItems.filter((item) =>
+        (!query || `${item.id} ${item.name} ${item.category} ${item.supplier}`.toLowerCase().includes(query)) &&
+        (!category || item.category === category) &&
+        (!supplier || item.supplier === supplier) &&
+        (!status || item.status === status)
+      ).sort((first, second) => {
+        const a = first[pantrySort.field] ?? '';
+        const b = second[pantrySort.field] ?? '';
+        const comparison = typeof a === 'number' && typeof b === 'number'
+          ? a - b
+          : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+        return comparison * (pantrySort.direction === 'asc' ? 1 : -1);
+      });
+      tbody.innerHTML = visible.length ? visible.map((item) => {
+        const statusClass = item.status.toLowerCase().replaceAll(' ', '-');
+        return `<tr class="${item.status === 'Out of Stock' ? 'out-of-stock' : ''}">
+          <td>#${escapeHtml(item.id)}</td><td><strong>${escapeHtml(item.name)}</strong></td>
+          <td>${escapeHtml(item.category)}</td><td>${escapeHtml(item.quantity)}</td><td>${escapeHtml(item.unit)}</td>
+          <td>${escapeHtml(item.reorder_level)}</td><td>R${Number(item.cost_per_unit).toFixed(2)}</td>
+          <td>${escapeHtml(item.supplier || '—')}</td><td>${escapeHtml(formatPantryDate(item.expiry_date))}</td>
+          <td><span class="pantry-status ${statusClass}">${escapeHtml(item.status)}</span></td>
+          <td>${escapeHtml(formatPantryTimestamp(item.last_updated))}</td>
+          <td><div class="pantry-row-actions">
+            <button class="manager-action" type="button" data-pantry-edit="${item.id}">Edit</button>
+            <button class="manager-action" type="button" data-pantry-restock="${item.id}">Restock</button>
+            <button class="manager-action" type="button" data-pantry-adjust="${item.id}">Adjust</button>
+            <button class="manager-action danger" type="button" data-pantry-delete="${item.id}">Delete</button>
+          </div></td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="12" class="manager-empty">No pantry items match these filters.</td></tr>';
+    }
+
+    function renderPantryAlerts() {
+      const panel = document.getElementById('pantry-alerts');
+      const critical = pantryItems.filter((item) => ['Low Stock', 'Out of Stock', 'Expired'].includes(item.status));
+      const now = new Date();
+      const dateString = (date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+      const today = dateString(now);
+      const sevenDays = dateString(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7));
+      const expiring = pantryItems.filter((item) =>
+        item.expiry_date && item.expiry_date >= today && item.expiry_date <= sevenDays
+      );
+      panel.innerHTML = [
+        ...critical.map((item) => `<div class="pantry-alert ${['Out of Stock', 'Expired'].includes(item.status) ? 'danger' : ''}"><strong>${escapeHtml(item.status)}:</strong> ${escapeHtml(item.name)}${item.status === 'Low Stock' ? ` · ${escapeHtml(item.quantity)} ${escapeHtml(item.unit)} left (reorder at ${escapeHtml(item.reorder_level)})` : ''}${item.status === 'Expired' ? ` · expired ${escapeHtml(formatPantryDate(item.expiry_date))}` : ''}</div>`),
+        ...expiring.map((item) => `<div class="pantry-alert"><strong>Expiring soon:</strong> ${escapeHtml(item.name)} · ${escapeHtml(formatPantryDate(item.expiry_date))}</div>`)
+      ].join('') || '<div class="pantry-alert" style="border-color:#15803d;background:#dcfce7;color:#166534">All pantry items are in good shape.</div>';
+    }
+
+    async function loadPantryData() {
+      const itemList = document.getElementById('pantry-items');
+      const movementsList = document.getElementById('pantry-movements');
+      document.getElementById('pantry-error').textContent = '';
+      itemList.innerHTML = '<tr><td colspan="12" class="manager-empty">Loading pantry items...</td></tr>';
+      try {
+        const [itemsResponse, movementsResponse] = await Promise.all([
+          apiFetch(`${API_BASE}/pantry`, { headers: authHeaders() }),
+          apiFetch(`${API_BASE}/pantry/movements`, { headers: authHeaders() })
+        ]);
+        const result = await itemsResponse.json();
+        const movements = await movementsResponse.json();
+        if (!itemsResponse.ok) throw new Error(result.error || 'Could not load pantry items.');
+        if (!movementsResponse.ok) throw new Error(movements.error || 'Could not load stock movements.');
+        pantryItems = result.items;
+        for (const [id, options] of [
+          ['pantry-filter-category', [...new Set(pantryItems.map((item) => item.category))].sort()],
+          ['pantry-filter-supplier', [...new Set(pantryItems.map((item) => item.supplier).filter(Boolean))].sort()]
+        ]) {
+          const select = document.getElementById(id);
+          const previous = select.value;
+          const label = id.endsWith('category') ? 'All categories' : 'All suppliers';
+          select.innerHTML = `<option value="">${label}</option>${options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join('')}`;
+          select.value = options.includes(previous) ? previous : '';
+        }
+        renderPantryAlerts();
+        renderPantryItems();
+        document.getElementById('pantry-movements').innerHTML = movements.length ? movements.map((movement) => `
+          <tr><td>${escapeHtml(formatPantryDate(movement.movement_date))}</td><td>${escapeHtml(movement.item_name)} (#${escapeHtml(movement.item_id)})</td>
+          <td class="pantry-movement-change ${movement.quantity_change < 0 ? 'negative' : 'positive'}">${movement.quantity_change > 0 ? '+' : ''}${escapeHtml(movement.quantity_change)}</td>
+          <td>${escapeHtml(movement.reason)}</td><td>${escapeHtml(movement.supplier || '—')}${movement.cost_per_unit == null ? '' : ` · R${Number(movement.cost_per_unit).toFixed(2)}`}</td>
+          <td>${escapeHtml(movement.performed_by_name)}</td></tr>
+        `).join('') : '<tr><td colspan="6" class="manager-empty">No stock movements recorded yet.</td></tr>';
+        loadManagerPantrySummary();
+      } catch (error) {
+        document.getElementById('pantry-error').textContent = error.message || 'Could not load pantry data.';
+        itemList.innerHTML = '<tr><td colspan="12" class="manager-empty">Pantry data could not be loaded.</td></tr>';
+        movementsList.innerHTML = '<tr><td colspan="6" class="manager-empty">Stock movement log could not be loaded.</td></tr>';
+      }
+    }
+
+  function renderManagerMenu(menu) {
+    const list = document.getElementById('manager-menu-management');
+    const select = document.getElementById('manager-promotion-item');
+    if (!list || !select) return;
+    select.innerHTML = menu.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+    list.innerHTML = menu.map((item) => `<article class="manager-list-item"><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.category)} · R${Number(item.price).toFixed(2)}</span></div><button class="manager-action danger" type="button" data-delete-menu="${item.id}">Delete</button></article>`).join('');
+    setManagerListPreview(list);
+  }
+
+  function renderManagerComplaints(complaints) {
+    const list = document.getElementById('manager-complaints-management');
+    if (!list) return;
+    list.innerHTML = complaints.length ? complaints.map((complaint) => {
+      const response = complaint.manager_response || '';
+      const hasEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(complaint.customer_email || '');
+      const emailStatus = complaint.email_status === 'sent'
+        ? `Sent${complaint.sent_at ? ` · ${escapeHtml(formatOrderDateTime(complaint.sent_at))}` : ''}`
+        : complaint.email_status === 'failed'
+          ? 'Failed to send'
+          : response.trim() ? 'Responded (not sent)' : 'Open';
+      const responseAlreadySent = complaint.email_status === 'sent' || Boolean(complaint.sent_at);
+      const canSend = Boolean(response.trim()) && hasEmail && !responseAlreadySent && !complaint.email_started_at;
+      return `
+        <article class="manager-complaint-card">
+          <div>
+            <strong>${escapeHtml(complaint.reference || `Complaint #${complaint.id}`)}</strong>
+            <span>${escapeHtml(complaint.category || 'General feedback')} · ${escapeHtml(complaint.severity || '')}</span>
+            <small>Received: ${escapeHtml(formatOrderDateTime(complaint.created_at))} · ${hasEmail ? `Reply email: ${escapeHtml(complaint.customer_email)}` : 'No valid customer email provided'}</small>
+            <p>${escapeHtml(complaint.description || complaint.message)}</p>
+          </div>
+          <span class="complaint-email-status ${complaint.email_status === 'sent' ? 'sent' : complaint.email_status === 'failed' ? 'failed' : ''}">${emailStatus}</span>
+          ${complaint.email_error ? `<p class="complaint-email-error" role="status">${escapeHtml(complaint.email_error)}</p>` : ''}
+          <select class="manager-complaint-status" data-complaint-id="${complaint.id}">${['Open', 'Under Review', 'Waiting for Customer', 'Resolved'].map((status) => `<option ${status === complaint.status ? 'selected' : ''}>${status}</option>`).join('')}</select>
+          <textarea class="manager-complaint-response" data-complaint-response="${complaint.id}" maxlength="2000" placeholder="Manager response" ${responseAlreadySent ? 'readonly' : ''}>${escapeHtml(response)}</textarea>
+          <div class="manager-complaint-actions">
+            <button class="manager-action" type="button" data-save-complaint="${complaint.id}" ${responseAlreadySent ? 'disabled' : ''}>Save</button>
+            <button class="manager-action primary" type="button" data-send-complaint="${complaint.id}" ${canSend ? '' : 'disabled'}>Send</button>
+          </div>
+          ${!hasEmail ? '<small class="complaint-send-help">A valid customer email is required to send a reply.</small>' : ''}
+          <p class="manager-complaint-message" data-complaint-message="${complaint.id}" role="status" aria-live="polite"></p>
+        </article>`;
+    }).join('') : '<p class="manager-empty">No complaints recorded yet.</p>';
+    setManagerListPreview(list);
+  }
+
+  function syncComplaintSendButton(id) {
+    const complaint = (window.managerComplaints || []).find((item) => Number(item.id) === Number(id));
+    const responseField = document.querySelector(`[data-complaint-response="${id}"]`);
+    const sendButton = document.querySelector(`[data-send-complaint="${id}"]`);
+    if (!complaint || !responseField || !sendButton) return;
+    const validEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(complaint.customer_email || '');
+    sendButton.disabled = !responseField.value.trim() || !validEmail
+      || complaint.email_status === 'sent' || Boolean(complaint.sent_at)
+      || Boolean(complaint.email_started_at);
+  }
+
+  function getAttendedComplaintIds() {
+    try {
+      return JSON.parse(localStorage.getItem(ATTENDED_COMPLAINTS_KEY) || '[]').map(Number);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function updateComplaintBadge(complaints) {
+    const badge = document.getElementById('manager-complaints-count');
+    if (!badge) return;
+    const attended = getAttendedComplaintIds();
+    const newCount = complaints.filter((complaint) => complaint.status !== 'Resolved' && !attended.includes(Number(complaint.id))).length;
+    badge.textContent = newCount;
+    badge.classList.toggle('has-new', newCount > 0);
+  }
+
+  function markComplaintsAttended() {
+    const complaints = window.managerComplaints || [];
+    const attended = new Set(getAttendedComplaintIds());
+    complaints.forEach((complaint) => attended.add(Number(complaint.id)));
+    localStorage.setItem(ATTENDED_COMPLAINTS_KEY, JSON.stringify([...attended]));
+    updateComplaintBadge(complaints);
+  }
+
+  async function loadManagerPromotions() {
+    const list = document.getElementById('manager-promotions');
+    if (!list) return;
+    try {
+      const response = await apiFetch(`${API_BASE}/promotions`, { headers: authHeaders() });
+      const promotions = await response.json();
+      if (!response.ok) throw new Error(promotions.error || 'Could not load promotions.');
+      list.innerHTML = promotions.length ? promotions.map((promotion) => `<article class="manager-list-item"><div><strong>${escapeHtml(promotion.menu_name)}</strong><span>${escapeHtml(promotion.discount_percent)}% · ${escapeHtml(promotion.start_at)} to ${escapeHtml(promotion.end_at)}</span></div></article>`).join('') : '<p class="manager-empty">No promotions created yet.</p>';
+      setManagerListPreview(list);
+    } catch (error) {
+      list.innerHTML = `<p class="manager-error">${escapeHtml(error.message || 'Could not load promotions.')}</p>`;
+      setManagerListPreview(list);
+    }
+  }
+
+  function formatStaffRole(role) {
+    return role ? role[0].toUpperCase() + role.slice(1) : 'Staff';
+  }
+
+  async function loadManagerStaffRoster() {
+    const staffList = document.getElementById('manager-staff-list');
+    const rosterList = document.getElementById('manager-roster-list');
+    if (!staffList || !rosterList) return;
+    const passwordHistoryList = document.getElementById('manager-staff-password-history');
+    const weekInput = document.getElementById('manager-roster-week');
+    const dateInput = document.getElementById('manager-roster-date');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monday = new Date(today);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    const dateValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    if (weekInput && !weekInput.value) weekInput.value = dateValue(monday);
+    if (dateInput && !dateInput.value) dateInput.value = dateValue(today);
+    try {
+      const [staffResponse, rosterResponse, passwordHistoryResponse] = await Promise.all([
+        apiFetch(`${API_BASE}/staff`, { headers: authHeaders() }),
+        apiFetch(`${API_BASE}/roster?week_start=${encodeURIComponent(weekInput?.value || dateValue(monday))}`, { headers: authHeaders() }),
+        apiFetch(`${API_BASE}/staff/password-history`, { headers: authHeaders() })
+      ]);
+      const staff = await staffResponse.json();
+      const roster = await rosterResponse.json();
+      const passwordHistory = await passwordHistoryResponse.json();
+      if (!staffResponse.ok) throw new Error(staff.error || 'Could not load staff members.');
+      if (!rosterResponse.ok) throw new Error(roster.error || 'Could not load the staff roster.');
+      if (!passwordHistoryResponse.ok) throw new Error(passwordHistory.error || 'Could not load staff password history.');
+      window.managerStaffMembers = staff;
+      const staffSelect = document.getElementById('manager-roster-staff');
+      if (staffSelect) {
+        const selectedStaff = staffSelect.value;
+        staffSelect.innerHTML = '<option value="">Choose staff member</option>' + staff.map((member) =>
+          `<option value="${member.id}">${escapeHtml(member.firstname)} ${escapeHtml(member.lastname)} · ${escapeHtml(formatStaffRole(member.role))}</option>`
+        ).join('');
+        if (staff.some((member) => String(member.id) === selectedStaff)) staffSelect.value = selectedStaff;
+      }
+      const passwordStaffSelect = document.getElementById('manager-password-staff');
+      const selectedPasswordStaff = passwordStaffSelect.value;
+      const passwordEligibleStaff = staff.filter((member) =>
+        ['waiter', 'manager'].includes(member.role) && member.email
+      );
+      passwordStaffSelect.innerHTML = '<option value="">Choose a staff member</option>' + passwordEligibleStaff.map((member) =>
+        `<option value="${member.id}">${escapeHtml(member.firstname)} ${escapeHtml(member.lastname)} · ${escapeHtml(member.email)}</option>`
+      ).join('');
+      if (passwordEligibleStaff.some((member) => String(member.id) === selectedPasswordStaff)) {
+        passwordStaffSelect.value = selectedPasswordStaff;
+      }
+      staffList.innerHTML = staff.length ? `<div class="staff-table-scroll"><table class="staff-orders-table">
+        <thead><tr><th>Staff member</th><th>Label</th><th>Pay rate</th><th>Account access</th><th>Actions</th></tr></thead>
+        <tbody>${staff.map((member) => `<tr>
+          <td><strong>${escapeHtml(member.firstname)} ${escapeHtml(member.lastname)}</strong><small>${escapeHtml(member.email || 'No email recorded')}</small></td>
+          <td>${escapeHtml(formatStaffRole(member.role))}</td>
+          <td>R${Number(member.hourly_rate).toFixed(2)} / hour</td>
+          <td>${member.login_active ? 'Active sign-in' : 'Roster only'}</td>
+          <td class="staff-row-actions">
+            <button class="manager-action" type="button" data-edit-staff="${member.id}">Edit</button>
+            ${['waiter', 'manager'].includes(member.role) && member.email ? `<button class="manager-action" type="button" data-generate-staff-password="${member.id}">Generate password</button>` : ''}
+            <button class="manager-action danger" type="button" data-delete-staff="${member.id}">Delete</button>
+          </td>
+        </tr>`).join('')}</tbody></table></div>`
+        : '<p class="manager-empty">No staff members have been added yet.</p>';
+      passwordHistoryList.innerHTML = passwordHistory.length ? passwordHistory.map((entry) => {
+        const status = entry.status === 'current' ? 'Generated · not yet used'
+          : entry.status === 'used' ? `Used${entry.used_at ? ` · ${formatOrderDateTime(entry.used_at)}` : ''}`
+            : entry.status === 'replaced' ? 'Replaced by a newer password' : 'Revoked';
+        return `<article class="manager-list-item">
+          <div><strong>${escapeHtml(entry.staff_name)}</strong><span>${escapeHtml(entry.email)} · ${escapeHtml(status)}</span></div>
+          <small>Generated by ${escapeHtml(entry.generated_by_name)} · ${escapeHtml(formatOrderDateTime(entry.created_at))}</small>
+        </article>`;
+      }).join('') : '<p class="manager-empty">No passwords have been generated yet.</p>';
+      setManagerListPreview(passwordHistoryList);
+      rosterList.innerHTML = roster.assignments.length ? `<div class="staff-table-scroll"><table class="staff-orders-table">
+        <thead><tr><th>Work date</th><th>Staff member</th><th>Role</th><th>Shift</th><th>Hours</th><th>Attendance</th></tr></thead>
+        <tbody>${roster.assignments.map((assignment) => `<tr>
+          <td>${escapeHtml(assignment.work_date)}</td>
+          <td><strong>${escapeHtml(assignment.firstname)} ${escapeHtml(assignment.lastname)}</strong></td>
+          <td>${escapeHtml(formatStaffRole(assignment.role))}</td>
+          <td>${escapeHtml(assignment.shift_label)}</td>
+          <td>${escapeHtml(assignment.starts_at)}–${escapeHtml(assignment.ends_at)}</td>
+          <td><span class="staff-attendance-pill ${escapeHtml(assignment.attendance_state.toLowerCase())}">${escapeHtml(assignment.attendance_state)}</span>${assignment.clock_in_at ? `<small>${escapeHtml(formatOrderDateTime(assignment.clock_in_at))}</small>` : ''}</td>
+        </tr>`).join('')}</tbody></table></div>`
+        : '<p class="manager-empty">No shifts are scheduled for this week.</p>';
+      setManagerListPreview(staffList);
+      setManagerListPreview(rosterList);
+    } catch (error) {
+      const message = escapeHtml(error.message || 'Could not load the staff roster.');
+      staffList.innerHTML = rosterList.innerHTML = `<p class="manager-error">${message}</p>`;
+      passwordHistoryList.innerHTML = `<p class="manager-error">${message}</p>`;
+    }
+  }
+
+  async function loadManagerShifts() {
+    const list = document.getElementById('manager-shifts');
+    if (!list) return;
+    const onDutyList = document.getElementById('manager-on-duty');
+    const historyList = document.getElementById('manager-attendance-history');
+    const payrollSummary = document.getElementById('manager-payroll-summary');
+    const payrollDaily = document.getElementById('manager-payroll-daily');
+    const monthInput = document.getElementById('manager-payroll-month');
+    if (monthInput && !monthInput.value) {
+      const now = new Date();
+      monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    try {
+      const [shiftsResponse, attendanceResponse] = await Promise.all([
+        apiFetch(`${API_BASE}/shifts`, { headers: authHeaders() }),
+        apiFetch(`${API_BASE}/attendance?month=${encodeURIComponent(monthInput?.value || '')}`, { headers: authHeaders() })
+      ]);
+      const shifts = await shiftsResponse.json();
+      const attendance = await attendanceResponse.json();
+      if (!shiftsResponse.ok) throw new Error(shifts.error || 'Could not load scheduled shifts.');
+      if (!attendanceResponse.ok) throw new Error(attendance.error || 'Could not load attendance.');
+      list.innerHTML = shifts.length ? shifts.map((shift) => `<article class="manager-list-item"><div><strong>${escapeHtml(shift.staff_name)}</strong><span>${escapeHtml(shift.role)} · ${escapeHtml(shift.shift_label)}</span></div><strong>${escapeHtml(shift.status)}</strong></article>`).join('') : '<p class="manager-empty">No shifts created yet.</p>';
+      setManagerListPreview(list);
+      onDutyList.innerHTML = attendance.on_duty.length ? attendance.on_duty.map((waiter) => `
+        <article class="manager-list-item">
+          <div><strong>${escapeHtml(waiter.firstname)} ${escapeHtml(waiter.lastname)}</strong><span>${escapeHtml(waiter.role)} · On duty since ${escapeHtml(formatOrderDateTime(waiter.clock_in_at))}</span></div>
+          <strong>${waiter.today_regular_hours.toFixed(2)} regular · ${waiter.today_overtime_hours.toFixed(2)} overtime today</strong>
+        </article>
+      `).join('') : '<p class="manager-empty">No staff are currently on duty.</p>';
+      setManagerListPreview(onDutyList);
+      historyList.innerHTML = attendance.history.length ? attendance.history.map((session) => `
+        <article class="manager-list-item">
+          <div><strong>${escapeHtml(session.firstname)} ${escapeHtml(session.lastname)}</strong><span>${session.clock_out_at ? 'Off Duty' : 'On Duty'}</span></div>
+          <small>${escapeHtml(session.role)} · In: ${escapeHtml(formatOrderDateTime(session.clock_in_at))} · Out: ${escapeHtml(session.clock_out_at ? formatOrderDateTime(session.clock_out_at) : 'Still on duty')}</small>
+        </article>
+      `).join('') : '<p class="manager-empty">No attendance recorded yet.</p>';
+      setManagerListPreview(historyList);
+      payrollSummary.innerHTML = attendance.payroll.staff.length
+        ? attendance.payroll.staff.map((staff) => `
+          <article class="manager-list-item">
+            <div><strong>${escapeHtml(staff.name)}</strong><span>${escapeHtml(staff.role)} · ${staff.regular_hours.toFixed(2)} regular hours · ${staff.overtime_hours.toFixed(2)} overtime hours</span></div>
+            <strong>R${staff.pay.toFixed(2)} gross</strong>
+          </article>
+        `).join('')
+        : '<p class="manager-empty">No attendance hours recorded for this month yet.</p>';
+      setManagerListPreview(payrollSummary);
+      payrollDaily.innerHTML = attendance.payroll.daily.length
+        ? attendance.payroll.daily.map((day) => `<tr>
+            <td>${escapeHtml(day.name)}</td><td>${escapeHtml(day.role)}</td><td>${escapeHtml(day.date)}</td>
+            <td>${day.regular_hours.toFixed(2)}</td><td>${day.overtime_hours.toFixed(2)}</td><td>R${day.pay.toFixed(2)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="6" class="manager-empty">No daily attendance recorded for this month.</td></tr>';
+    } catch (error) {
+      list.innerHTML = `<p class="manager-error">${escapeHtml(error.message || 'Could not load shift information.')}</p>`;
+      onDutyList.innerHTML = historyList.innerHTML = `<p class="manager-error">${escapeHtml(error.message || 'Could not load attendance.')}</p>`;
+      payrollSummary.innerHTML = `<p class="manager-error">${escapeHtml(error.message || 'Could not load payroll.')}</p>`;
+      payrollDaily.innerHTML = `<tr><td colspan="6" class="manager-error">${escapeHtml(error.message || 'Could not load daily hours.')}</td></tr>`;
+    }
+  }
+
+  document.getElementById('manager-payroll-month').addEventListener('change', loadManagerShifts);
+
+  function resetInactivityTimer() {
+    if (!getAuthState()?.token) return;
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => handleLogout(true), INACTIVITY_LIMIT_MS);
+  }
+
+  function startInactivityTracking() {
+    ['click', 'keydown', 'mousemove', 'touchstart'].forEach((eventName) => document.addEventListener(eventName, resetInactivityTimer, { passive: true }));
+    resetInactivityTimer();
+  }
+
+  let activeWaiterView = 'live';
+
+  function renderWaiterOrderTable(orders, editable) {
+    return `<div class="staff-table-scroll"><table class="staff-orders-table">
+      <thead><tr><th>Order ID</th><th>Customer</th><th>Order</th><th>Table</th><th>Order status</th><th>Waiter</th><th>Actions</th></tr></thead>
+      <tbody>${orders.map((order) => {
+        const statuses = order.order_type === 'Dine in'
+          ? ['Received', 'Preparing', 'Ready', 'Served', 'Cancelled']
+          : ['Received', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
+        if (!statuses.includes(order.status)) statuses.push(order.status);
+        const statusControl = editable
+          ? `<select class="order-status" data-order-id="${order.id}" aria-label="Update status for ${escapeHtml(order.order_number)}">${statuses.map((status) => `<option ${status === order.status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}</select>`
+          : `<span class="staff-status-pill">${escapeHtml(order.status)}</span>`;
+        const tableControl = editable && order.order_type === 'Dine in' && !order.table_number
+          ? `<select class="table-assignment" data-order-id="${order.id}" aria-label="Assign table to ${escapeHtml(order.order_number)}"><option value="">Assign table</option>${window.waiterAvailableTables.map((table) => `<option value="${escapeHtml(table)}">Table ${escapeHtml(table)}</option>`).join('')}</select>`
+          : order.table_number ? `Table ${escapeHtml(order.table_number)}` : '—';
+        const canMarkPaid = editable
+          && ['cash', 'card'].includes(order.payment_method)
+          && (order.order_type === 'Dine in' && order.status === 'Served'
+            || order.order_type === 'Takeaway' && order.status === 'Ready');
+        const payControl = order.status === 'Paid'
+          ? '<button class="staff-row-action is-complete" type="button" disabled>Paid</button>'
+          : `<button class="staff-row-action" type="button" data-order-mark-paid="${order.id}" ${canMarkPaid ? '' : 'disabled'}>${canMarkPaid ? 'Mark as paid' : order.payment_method !== 'cash' && order.payment_method !== 'card' ? 'Payment unavailable' : order.order_type === 'Dine in' ? 'Mark paid when served' : 'Mark paid when ready'}</button>`;
+        const claimControl = editable && !order.waiter_id
+          ? `<button class="staff-row-action" type="button" data-order-claim="${order.id}">Assign to me</button>`
+          : '';
+        return `<tr>
+          <td><strong>${escapeHtml(order.order_number)}</strong><small>#${escapeHtml(order.id)}</small></td>
+          <td>${escapeHtml(order.customer_name || 'Guest customer')}</td>
+          <td><span class="staff-order-items">${(order.items || []).map((item) => `${escapeHtml(item.quantity)} × ${escapeHtml(item.name)}`).join(', ')}</span><small>${escapeHtml(order.order_type)} · R${Number(order.total).toFixed(2)} · ${escapeHtml(formatPaymentMethod(order.payment_method))}</small></td>
+          <td>${tableControl}</td>
+          <td>${statusControl}</td>
+          <td>${escapeHtml(order.waiter_name || 'Unassigned')}</td>
+          <td class="staff-row-actions">${claimControl}${payControl}</td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+  }
+
+  function renderWaiterComplaints(complaints) {
+    return complaints.length
+      ? `<div class="staff-table-scroll"><table class="staff-orders-table waiter-complaints-table">
+          <thead><tr><th>Reference</th><th>Submitted by</th><th>Order</th><th>Complaint details</th><th>Status</th><th>Received</th></tr></thead>
+          <tbody>${complaints.map((complaint) => `<tr>
+            <td><strong>${escapeHtml(complaint.reference || `CMP-${complaint.id}`)}</strong><small>${escapeHtml(complaint.category || 'General feedback')} · ${escapeHtml(complaint.severity || '')}</small></td>
+            <td>${escapeHtml(complaint.customer_name || 'Guest customer')}<small>${complaint.identity_mode === 'add_email' ? escapeHtml(complaint.customer_email) : 'Anonymous'}</small></td>
+            <td>${escapeHtml(complaint.order_number || complaint.order_id || '—')}</td>
+            <td>${escapeHtml(complaint.description || complaint.message)}${complaint.manager_response ? `<small>Manager response: ${escapeHtml(complaint.manager_response)}</small>` : ''}</td>
+            <td>${escapeHtml(complaint.status)}</td>
+            <td>${escapeHtml(formatOrderDateTime(complaint.created_at))}</td>
+          </tr>`).join('')}</tbody></table></div>`
+      : '<p class="manager-empty">No complaints have been submitted.</p>';
+  }
+
+  function renderWaiterPaymentRequests(orders) {
+    const requests = orders.filter((order) => order.payment_requested && order.status === 'Served');
+    return requests.length
+      ? `<div class="staff-table-scroll"><table class="staff-orders-table">
+          <thead><tr><th>Table</th><th>Order</th><th>Customer</th><th>Payment</th><th>Waiter</th><th>Action</th></tr></thead>
+          <tbody>${requests.map((order) => `<tr>
+            <td><strong>Table ${escapeHtml(order.table_number || 'Unassigned')}</strong></td>
+            <td>${escapeHtml(order.order_number)}<small>R${Number(order.total).toFixed(2)}</small></td>
+            <td>${escapeHtml(order.customer_name || 'Guest customer')}</td>
+            <td>${escapeHtml(formatPaymentMethod(order.payment_method))}</td>
+            <td>${escapeHtml(order.waiter_name || 'Unassigned')}</td>
+            <td><button class="staff-row-action" type="button" data-order-mark-paid="${order.id}">Mark paid</button></td>
+          </tr>`).join('')}</tbody></table></div>`
+      : '<p class="manager-empty">No tables are currently waiting to pay.</p>';
+  }
+
+  function renderWaiterReservations(reservations) {
+    return reservations.length
+      ? `<div class="staff-table-scroll"><table class="staff-orders-table">
+          <thead><tr><th>Reservation / order</th><th>Customer details</th><th>Table and time</th><th>Order status</th><th>Fee</th><th>Waiter</th></tr></thead>
+          <tbody>${reservations.map((reservation) => `<tr>
+            <td><strong>${escapeHtml(reservation.order_number || `Reservation ${reservation.id}`)}</strong><small>${reservation.order_id ? `Order #${escapeHtml(reservation.order_id)} · ` : ''}${escapeHtml(reservation.status)}</small></td>
+            <td>${escapeHtml(reservation.customer_name || 'Guest customer')}<small>${escapeHtml(reservation.customer_email || 'No email recorded')}</small></td>
+            <td>Table ${escapeHtml(reservation.table_number)}<small>${escapeHtml(formatOrderDateTime(reservation.starts_at))} – ${escapeHtml(formatOrderDateTime(reservation.ends_at))}</small></td>
+            <td>${escapeHtml(reservation.order_status || 'Existing booking')}<small>${reservation.order_created_at ? `Ordered ${escapeHtml(formatOrderDateTime(reservation.order_created_at))}` : ''}</small></td>
+            <td>${reservation.fee_amount == null ? 'No separate fee recorded' : `R${Number(reservation.fee_amount).toFixed(2)} · ${reservation.fee_paid ? '<span class="staff-status-pill">Paid</span>' : `<button class="staff-row-action" type="button" data-reservation-fee-paid="${reservation.id}">Record paid</button>`}`}</td>
+            <td>${escapeHtml([reservation.waiter_firstname, reservation.waiter_lastname].filter(Boolean).join(' ') || 'Unassigned')}</td>
+          </tr>`).join('')}</tbody></table></div>`
+      : '<p class="manager-empty">No table reservations have been made.</p>';
+  }
+
+  async function loadWaiterOrders(view = activeWaiterView) {
+    const container = document.getElementById('waiter-orders');
+    if (!container) return;
+    const viewTitles = {
+      live: 'Live orders',
+      history: 'Order history',
+      cancelled: 'Cancelled orders',
+      complaints: 'Customer complaints',
+      payments: 'Payment requests',
+      reservations: 'Table reservations'
+    };
+    const title = document.getElementById('waiter-view-title');
+    if (title) title.textContent = viewTitles[view] || 'Live orders';
+    container.setAttribute('aria-label', viewTitles[view] || 'Live restaurant orders');
+    const status = document.getElementById('waiter-refresh-status');
+    if (!container.dataset.loaded) container.innerHTML = '<p class="manager-loading">Loading service desk records…</p>';
+    const scrollPosition = window.scrollY;
+    try {
+      const [ordersResponse, tablesResponse] = await Promise.all([
+        apiFetch(`${API_BASE}/orders${view === 'live' ? '?active=true' : ''}`, { headers: authHeaders() }),
+        apiFetch(`${API_BASE}/tables/available`, { headers: authHeaders() })
+      ]);
+      const orders = await ordersResponse.json();
+      const tables = await tablesResponse.json();
+      if (!ordersResponse.ok) throw new Error(orders.error || 'Could not load waiter orders.');
+      if (!tablesResponse.ok) throw new Error(tables.error || 'Could not load available tables.');
+      window.waiterAvailableTables = tables;
+      if (view === 'complaints') {
+        const response = await apiFetch(`${API_BASE}/complaints`, { headers: authHeaders() });
+        const complaints = await response.json();
+        if (!response.ok) throw new Error(complaints.error || 'Could not load customer complaints.');
+        container.innerHTML = renderWaiterComplaints(complaints);
+      } else if (view === 'reservations') {
+        const response = await apiFetch(`${API_BASE}/reservations`, { headers: authHeaders() });
+        const reservations = await response.json();
+        if (!response.ok) throw new Error(reservations.error || 'Could not load reservations.');
+        container.innerHTML = renderWaiterReservations(reservations);
+      } else if (view === 'payments') {
+        container.innerHTML = renderWaiterPaymentRequests(orders);
+      } else {
+        const displayedOrders = view === 'cancelled'
+          ? orders.filter((order) => order.status === 'Cancelled')
+          : view === 'history'
+            ? orders
+            : orders.filter((order) => !['Paid', 'Completed', 'Cancelled'].includes(order.status));
+        container.innerHTML = displayedOrders.length
+          ? renderWaiterOrderTable(displayedOrders, view === 'live')
+          : `<p class="manager-empty">No ${escapeHtml(viewTitles[view].toLowerCase())} to display.</p>`;
+      }
+      container.dataset.loaded = 'true';
+      if (status) status.textContent = 'Updating automatically';
+      requestAnimationFrame(() => {
+        if (document.getElementById('page-waiter-dashboard').classList.contains('active')
+          && Math.abs(window.scrollY - scrollPosition) > 1) {
+          window.scrollTo({ top: scrollPosition, behavior: 'instant' });
+        }
+      });
+    } catch (error) {
+      if (status) status.textContent = `Update unavailable: ${error.message || 'Could not load service desk records.'}`;
+      if (!container.dataset.loaded) {
+        container.innerHTML = `<p class="empty-complaint">${escapeHtml(error.message || 'Could not load orders.')}</p>`;
+      }
+    }
+  }
+
+  document.querySelectorAll('[data-waiter-view]').forEach((tab) => tab.addEventListener('click', () => {
+    activeWaiterView = tab.dataset.waiterView;
+    document.querySelectorAll('[data-waiter-view]').forEach((item) => item.classList.toggle('active', item === tab));
+    loadWaiterOrders(activeWaiterView);
+  }));
+
+  async function refreshWaiterOrders() {
+    const button = document.getElementById('waiter-refresh-button');
+    if (button) {
+      button.disabled = true;
+      button.firstChild.textContent = 'Refreshing orders ';
+    }
+    try {
+      await loadWaiterOrders();
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.firstChild.textContent = 'Refresh orders ';
+      }
+    }
+  }
+
+  document.addEventListener('change', async (event) => {
+    if (!(event.target instanceof Element)) return;
+    const complaintControl = event.target.closest('.manager-complaint-status');
+    if (complaintControl) {
+      const complaintId = Number(complaintControl.dataset.complaintId);
+      const complaint = (window.managerComplaints || []).find((item) => Number(item.id) === complaintId);
+      if (!complaint) return;
+      const previousStatus = complaint.status;
+      const selectedStatus = complaintControl.value;
+      complaintControl.disabled = true;
+      try {
+        const response = await apiFetch(`${API_BASE}/complaints/${complaintId}`, {
+          method: 'PATCH',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ status: selectedStatus })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Could not update complaint status.');
+        window.managerComplaints = (window.managerComplaints || []).map((item) =>
+          Number(item.id) === complaintId ? { ...item, ...result } : item
+        );
+        renderManagerComplaints(window.managerComplaints);
+        updateComplaintBadge(window.managerComplaints);
+        showToast('Complaint status updated.');
+      } catch (error) {
+        complaintControl.value = previousStatus;
+        showToast(error.message || 'Could not update complaint status. Please try again.');
+      } finally {
+        if (complaintControl.isConnected) complaintControl.disabled = false;
+      }
+      return;
+    }
+    const control = event.target.closest('.table-assignment, .order-status');
+    if (!control) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const orderId = control.dataset.orderId;
+    const endpoint = control.classList.contains('table-assignment') ? `/orders/${orderId}/table` : `/orders/${orderId}`;
+    const body = control.classList.contains('table-assignment') ? { table_number: control.value } : { status: control.value };
+    if (!body.table_number && !body.status) return;
+    try {
+      const response = await apiFetch(`${API_BASE}${endpoint}`, { method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) });
+      const result = await response.json();
+      if (!response.ok) { showToast(result.error || 'Could not update order'); return; }
+      if (document.getElementById('page-waiter-dashboard').classList.contains('active')) loadWaiterOrders();
+    } catch (error) {
+      showToast('Could not update the order. Please try again.');
+    }
+  });
+
+  // ================================================================
+  // LOGOUT — clears the staff session and returns to sign in
+  // ================================================================
+  async function handleLogout() {
+    const timedOut = arguments[0] === true;
+    if (currentUser && getAuthState()?.token) {
+      try {
+        const response = await apiFetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok && getAuthState()?.token) {
+          showToast(result.error || 'Could not record your clock-out. Please try signing out again.');
+          return;
+        }
+      } catch (error) {
+        showToast('Could not record your clock-out. Check your connection and try signing out again.');
+        return;
+      }
+    }
+    clearTimeout(inactivityTimer);
+    clearAuthState();
+    currentUser = null;
+    showToast(timedOut ? 'You were signed out after 10 minutes of inactivity.' : 'Signed out successfully. See you soon!');
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) chatMessages.innerHTML = '';
+    setTimeout(() => showPage('login'), 1200);
+  }
+
+  document.querySelectorAll('[data-manager-section]').forEach((tab) => tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-manager-section]').forEach((item) => item.classList.toggle('active', item === tab));
+    document.querySelectorAll('.manager-section-panel').forEach((panel) => panel.classList.toggle('hidden', panel.id !== tab.dataset.managerSection));
+    if (tab.dataset.managerSection === 'manager-complaints-section') markComplaintsAttended();
+    if (tab.dataset.managerSection === 'manager-pantry-section') loadPantryData();
+    if (tab.dataset.managerSection === 'manager-shifts-section') loadManagerShifts();
+    if (tab.dataset.managerSection === 'manager-staff-section') loadManagerStaffRoster();
+  }));
+
+  document.querySelectorAll('[data-manager-section-link]').forEach((button) => button.addEventListener('click', () => {
+    document.querySelector(`[data-manager-section="${button.dataset.managerSectionLink}"]`)?.click();
+  }));
+
+  function showPantryItemForm(item = null) {
+    const wrap = document.getElementById('pantry-form-wrap');
+    const form = document.getElementById('pantry-item-form');
+    form.reset();
+    form.dataset.itemId = item ? String(item.id) : '';
+    document.getElementById('pantry-form-title').textContent = item ? `Edit ${item.name}` : 'Add pantry item';
+    if (item) {
+      Object.entries(item).forEach(([key, value]) => {
+        if (form.elements.namedItem(key)) form.elements.namedItem(key).value = value ?? '';
+      });
+    }
+    document.getElementById('pantry-item-result').textContent = '';
+    wrap.classList.remove('hidden');
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.getElementById('pantry-add-item').addEventListener('click', () => showPantryItemForm());
+  document.getElementById('pantry-refresh').addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = 'Refreshing...';
+    try {
+      await loadPantryData();
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Refresh stock';
+    }
+  });
+  document.getElementById('pantry-cancel-item').addEventListener('click', () => {
+    document.getElementById('pantry-form-wrap').classList.add('hidden');
+    document.getElementById('pantry-item-form').reset();
+  });
+  document.getElementById('pantry-item-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries());
+    ['quantity', 'reorder_level', 'cost_per_unit'].forEach((key) => { data[key] = Number(data[key]); });
+    const itemId = form.dataset.itemId;
+    const resultNode = document.getElementById('pantry-item-result');
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    resultNode.textContent = itemId ? 'Saving changes...' : 'Adding item...';
+    try {
+      const response = await apiFetch(`${API_BASE}/pantry${itemId ? `/${itemId}` : ''}`, {
+        method: itemId ? 'PATCH' : 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save pantry item.');
+      resultNode.textContent = `${result.name} saved.`;
+      document.getElementById('pantry-form-wrap').classList.add('hidden');
+      await loadPantryData();
+      showToast(itemId ? 'Pantry item updated.' : 'Pantry item added.');
+    } catch (error) {
+      resultNode.textContent = error.message || 'Could not save pantry item.';
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  document.getElementById('pantry-movement-close').addEventListener('click', () => document.getElementById('pantry-movement-dialog').close());
+  document.getElementById('pantry-movement-cancel').addEventListener('click', () => document.getElementById('pantry-movement-dialog').close());
+  document.getElementById('pantry-movement-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = Object.fromEntries(new FormData(form).entries());
+    const type = values.movement_type;
+    const itemId = values.item_id || values.selected_item;
+    const body = type === 'restock'
+      ? { quantity_received: Number(values.quantity), supplier: values.supplier.trim(), cost_per_unit: Number(values.cost_per_unit), date: values.date }
+      : { quantity: Number(values.quantity), reason: values.reason, date: values.date };
+    const errorNode = document.getElementById('pantry-movement-error');
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    errorNode.textContent = '';
+    try {
+      const response = await apiFetch(`${API_BASE}/pantry/${itemId}/${type}`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save stock movement.');
+      form.reset();
+      document.getElementById('pantry-movement-dialog').close();
+      await loadPantryData();
+      showToast(type === 'restock' ? `${result.name} restocked.` : `${result.name} stock adjusted.`);
+    } catch (error) {
+      errorNode.textContent = error.message || 'Could not save stock movement.';
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  ['pantry-search', 'pantry-filter-category', 'pantry-filter-supplier', 'pantry-filter-status'].forEach((id) => {
+    document.getElementById(id).addEventListener(id === 'pantry-search' ? 'input' : 'change', renderPantryItems);
+  });
+  document.querySelectorAll('[data-pantry-sort]').forEach((button) => button.addEventListener('click', () => {
+    const field = button.dataset.pantrySort;
+    pantrySort = { field, direction: pantrySort.field === field && pantrySort.direction === 'asc' ? 'desc' : 'asc' };
+    renderPantryItems();
+  }));
+
+  async function downloadManagerExport(dataset, button, endpoint, resultId = 'manager-export-result') {
+    const result = document.getElementById(resultId);
+    button.disabled = true;
+    result.textContent = 'Preparing export…';
+    try {
+      const response = await apiFetch(endpoint || `${API_BASE}/exports/${encodeURIComponent(dataset)}`, {
+        headers: authHeaders()
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Could not prepare the PDF export.');
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const filename = disposition.match(/filename="([^"]+)"/i)?.[1]
+        || `dinedesk-${dataset}-export.pdf`;
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      result.textContent = `${filename} is ready.`;
+    } catch (error) {
+      result.textContent = error.message || 'Could not export company records.';
+      showToast(result.textContent);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  document.getElementById('manager-menu-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const resultMessage = document.getElementById('manager-menu-result');
+    const formData = new FormData(form);
+    ['name', 'category', 'description'].forEach((field) => {
+      formData.set(field, String(formData.get(field) || '').trim());
+    });
+    submitButton.disabled = true;
+    resultMessage.textContent = 'Adding menu item...';
+    try {
+      const response = await apiFetch(`${API_BASE}/menu-items`, { method: 'POST', headers: authHeaders(), body: formData });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Could not add menu item (HTTP ${response.status}).`);
+      addMenuItemToCustomerMenus(result);
+      localStorage.setItem('bundu_menu_items_updated', String(Date.now()));
+      form.reset();
+      resultMessage.textContent = `${result.name} was added to the customer menu.`;
+      await loadMenuItems();
+      loadManagerDashboard();
+      showToast('Menu item added to the customer menu.');
+    } catch (error) {
+      resultMessage.textContent = error.message || 'Could not connect to the menu service.';
+      showToast(resultMessage.textContent);
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  document.getElementById('manager-promotion-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const response = await apiFetch(`${API_BASE}/promotions`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ menu_item_id: Number(document.getElementById('manager-promotion-item').value), discount_percent: Number(document.getElementById('manager-promotion-discount').value), start_at: document.getElementById('manager-promotion-start').value, end_at: document.getElementById('manager-promotion-end').value }) });
+    const result = await response.json();
+    if (!response.ok) return showToast(result.error || 'Could not create promotion.');
+    event.target.reset(); loadManagerPromotions(); showToast('Promotion created.');
+  });
+
+  document.getElementById('manager-shift-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const response = await apiFetch(`${API_BASE}/shifts`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ staff_name: document.getElementById('manager-shift-name').value.trim(), role: document.getElementById('manager-shift-role').value.trim(), shift_label: document.getElementById('manager-shift-label').value.trim(), status: document.getElementById('manager-shift-status').value }) });
+    const result = await response.json();
+    if (!response.ok) return showToast(result.error || 'Could not create shift.');
+    event.target.reset(); loadManagerShifts(); showToast('Shift added.');
+  });
+
+  document.getElementById('manager-add-staff-button').addEventListener('click', () => {
+    const form = document.getElementById('manager-staff-form');
+    form.reset();
+    delete form.dataset.staffId;
+    form.classList.remove('hidden');
+    form.elements.password.disabled = false;
+    form.elements.password.placeholder = 'Optional password (12+ characters)';
+    form.querySelector('[type="submit"]').textContent = 'Add staff member';
+    document.getElementById('manager-staff-cancel-edit').classList.add('hidden');
+    syncStaffFormFields();
+    form.elements.firstname.focus();
+  });
+
+  function syncStaffFormFields() {
+    const form = document.getElementById('manager-staff-form');
+    const requiresAccount = ['waiter', 'manager'].includes(form.elements.role.value);
+    form.elements.email.required = requiresAccount;
+    form.elements.password.disabled = !requiresAccount || Boolean(form.dataset.staffId);
+    form.elements.password.placeholder = requiresAccount
+      ? 'Optional password (12+ characters)'
+      : 'Chefs do not have a sign-in account';
+  }
+
+  document.querySelector('#manager-staff-form [name="role"]').addEventListener('change', syncStaffFormFields);
+
+  function cancelStaffEdit() {
+    const form = document.getElementById('manager-staff-form');
+    form.reset();
+    delete form.dataset.staffId;
+    form.classList.add('hidden');
+    form.querySelector('[type="submit"]').textContent = 'Add staff member';
+    document.getElementById('manager-staff-cancel-edit').classList.add('hidden');
+    syncStaffFormFields();
+  }
+
+  document.getElementById('manager-staff-cancel-edit').addEventListener('click', cancelStaffEdit);
+
+  function beginStaffEdit(staffId) {
+    const member = (window.managerStaffMembers || []).find((candidate) => Number(candidate.id) === Number(staffId));
+    if (!member) return;
+    const form = document.getElementById('manager-staff-form');
+    form.reset();
+    form.dataset.staffId = String(member.id);
+    form.elements.firstname.value = member.firstname;
+    form.elements.lastname.value = member.lastname;
+    form.elements.role.value = member.role;
+    form.elements.email.value = member.email || '';
+    form.elements.hourly_rate.value = member.hourly_rate;
+    form.elements.password.value = '';
+    form.classList.remove('hidden');
+    form.querySelector('[type="submit"]').textContent = 'Save changes';
+    document.getElementById('manager-staff-cancel-edit').classList.remove('hidden');
+    syncStaffFormFields();
+    form.elements.firstname.focus();
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function generateStaffPassword(staffId, button) {
+    const resultNode = document.getElementById('manager-password-result');
+    button.disabled = true;
+    resultNode.textContent = 'Generating a new password...';
+    try {
+      const response = await apiFetch(`${API_BASE}/staff/${encodeURIComponent(staffId)}/password`, {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not generate a staff password.');
+      document.getElementById('manager-generated-password-email').textContent = result.email;
+      const passwordField = document.getElementById('manager-generated-password');
+      passwordField.value = result.password;
+      document.getElementById('manager-generated-password-field').classList.remove('hidden');
+      passwordField.focus();
+      passwordField.select();
+      resultNode.textContent = `Password for ${result.email}. Copy it now; it will not be shown again.`;
+      await loadManagerStaffRoster();
+    } catch (error) {
+      resultNode.textContent = error.message || 'Could not generate a staff password.';
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  document.getElementById('manager-generate-staff-password').addEventListener('click', (event) => {
+    const staffId = document.getElementById('manager-password-staff').value;
+    if (!staffId) {
+      document.getElementById('manager-password-result').textContent = 'Choose a staff member first.';
+      return;
+    }
+    generateStaffPassword(staffId, event.currentTarget);
+  });
+
+  document.getElementById('manager-copy-staff-password').addEventListener('click', async () => {
+    const passwordField = document.getElementById('manager-generated-password');
+    const resultNode = document.getElementById('manager-password-result');
+    if (!passwordField.value) {
+      resultNode.textContent = 'Generate a password before copying it.';
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(passwordField.value);
+      resultNode.textContent = 'Password copied. Share it securely with the staff member.';
+    } catch (error) {
+      passwordField.focus();
+      passwordField.select();
+      resultNode.textContent = 'Clipboard access is unavailable. The password is selected; copy it with Ctrl+C.';
+    }
+  });
+
+  document.getElementById('manager-staff-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const resultNode = document.getElementById('manager-staff-result');
+    const submitButton = form.querySelector('[type="submit"]');
+    const values = Object.fromEntries(new FormData(form).entries());
+    values.hourly_rate = Number(values.hourly_rate);
+    const staffId = form.dataset.staffId;
+    submitButton.disabled = true;
+    resultNode.textContent = staffId ? 'Saving staff changes...' : 'Saving staff member...';
+    try {
+      const response = await apiFetch(staffId ? `${API_BASE}/staff/${encodeURIComponent(staffId)}` : `${API_BASE}/staff`, {
+        method: staffId ? 'PUT' : 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(values)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save this staff member.');
+      cancelStaffEdit();
+      resultNode.textContent = `${result.firstname} ${result.lastname} was ${staffId ? 'updated' : 'added'}.`;
+      await loadManagerStaffRoster();
+      await loadManagerShifts();
+      showToast(staffId ? 'Staff member updated.' : 'Staff member added to the roster.');
+    } catch (error) {
+      resultNode.textContent = error.message || 'Could not save this staff member.';
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  document.getElementById('manager-roster-week').addEventListener('change', loadManagerStaffRoster);
+  document.getElementById('manager-roster-export').addEventListener('click', (event) => {
+    const weekStart = document.getElementById('manager-roster-week').value;
+    const endpoint = `${API_BASE}/exports/weekly-roster?week_start=${encodeURIComponent(weekStart)}`;
+    downloadManagerExport(
+      'weekly-roster',
+      event.currentTarget,
+      endpoint,
+      'manager-roster-export-result'
+    );
+  });
+  document.getElementById('manager-roster-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const resultNode = document.getElementById('manager-roster-result');
+    const submitButton = form.querySelector('[type="submit"]');
+    const values = Object.fromEntries(new FormData(form).entries());
+    values.staff_id = Number(values.staff_id);
+    submitButton.disabled = true;
+    resultNode.textContent = 'Scheduling shift...';
+    try {
+      const response = await apiFetch(`${API_BASE}/roster`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(values)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not schedule this shift.');
+      resultNode.textContent = `Shift scheduled for ${result.firstname} ${result.lastname}.`;
+      await loadManagerStaffRoster();
+    } catch (error) {
+      resultNode.textContent = error.message || 'Could not schedule this shift.';
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  document.addEventListener('input', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const responseField = event.target.closest('[data-complaint-response]');
+    if (responseField) syncComplaintSendButton(responseField.dataset.complaintResponse);
+  });
+
+  document.addEventListener('click', async (event) => {
+    if (!(event.target instanceof Element)) return;
+    const editStaffButton = event.target.closest('[data-edit-staff]');
+    if (editStaffButton) {
+      beginStaffEdit(editStaffButton.dataset.editStaff);
+      return;
+    }
+    const generatePasswordButton = event.target.closest('[data-generate-staff-password]');
+    if (generatePasswordButton) {
+      document.getElementById('manager-password-staff').value = generatePasswordButton.dataset.generateStaffPassword;
+      document.getElementById('manager-staff-password-history').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      await generateStaffPassword(generatePasswordButton.dataset.generateStaffPassword, generatePasswordButton);
+      return;
+    }
+    const deleteStaffButton = event.target.closest('[data-delete-staff]');
+    if (deleteStaffButton) {
+      const staffId = Number(deleteStaffButton.dataset.deleteStaff);
+      const member = (window.managerStaffMembers || []).find((candidate) => Number(candidate.id) === staffId);
+      if (!member || !confirm(`Delete ${member.firstname} ${member.lastname}? Their login will be disabled and scheduled shifts removed.`)) return;
+      deleteStaffButton.disabled = true;
+      try {
+        const response = await apiFetch(`${API_BASE}/staff/${staffId}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not delete this staff member.');
+        await loadManagerStaffRoster();
+        await loadManagerShifts();
+        showToast(`${member.firstname} ${member.lastname} deleted.`);
+      } catch (error) {
+        showToast(error.message || 'Could not delete this staff member.');
+      } finally {
+        deleteStaffButton.disabled = false;
+      }
+      return;
+    }
+    const exportButton = event.target.closest('[data-manager-export]');
+    if (exportButton) {
+      await downloadManagerExport(exportButton.dataset.managerExport, exportButton);
+      return;
+    }
+    const paidOrder = event.target.closest('[data-order-mark-paid]');
+    const claimOrder = event.target.closest('[data-order-claim]');
+    const paidReservation = event.target.closest('[data-reservation-fee-paid]');
+    if (paidOrder || claimOrder || paidReservation) {
+      const actionButton = paidOrder || claimOrder || paidReservation;
+      const path = paidOrder
+        ? `/orders/${actionButton.dataset.orderMarkPaid}`
+        : claimOrder
+          ? `/orders/${actionButton.dataset.orderClaim}/claim`
+          : `/reservations/${actionButton.dataset.reservationFeePaid}/fee`;
+      const body = paidOrder ? { status: 'Paid' } : {};
+      actionButton.disabled = true;
+      try {
+        const response = await apiFetch(`${API_BASE}${path}`, {
+          method: 'PATCH',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          ...(paidOrder ? { body: JSON.stringify(body) } : {})
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Could not update service desk record.');
+        showToast(paidOrder ? 'Payment recorded.' : claimOrder ? 'Order assigned to you.' : 'Reservation fee recorded.');
+        await loadWaiterOrders(activeWaiterView);
+      } catch (error) {
+        showToast(error.message || 'Could not update service desk record.');
+        actionButton.disabled = false;
+      }
+      return;
+    }
+    const editPantry = event.target.closest('[data-pantry-edit]');
+    if (editPantry) {
+      const item = pantryItems.find((candidate) => candidate.id === Number(editPantry.dataset.pantryEdit));
+      if (item) showPantryItemForm(item);
+      return;
+    }
+    const movementButton = event.target.closest('[data-pantry-restock], [data-pantry-adjust], #pantry-add-stock');
+    if (movementButton) {
+      const addStock = movementButton.id === 'pantry-add-stock';
+      const restock = addStock || movementButton.hasAttribute('data-pantry-restock');
+      const itemId = addStock ? '' : movementButton.dataset.pantryRestock || movementButton.dataset.pantryAdjust;
+      const item = pantryItems.find((candidate) => candidate.id === Number(itemId));
+      const form = document.getElementById('pantry-movement-form');
+      form.reset();
+      form.elements.namedItem('item_id').value = itemId;
+      form.elements.namedItem('movement_type').value = restock ? 'restock' : 'adjust';
+      const itemSelectField = document.querySelector('.pantry-item-select-field');
+      const itemSelect = form.elements.namedItem('selected_item');
+      itemSelectField.classList.toggle('hidden', !addStock);
+      itemSelect.required = addStock;
+      if (addStock) {
+        itemSelect.innerHTML = pantryItems.map((candidate) =>
+          `<option value="${candidate.id}">${escapeHtml(candidate.name)} · ${escapeHtml(candidate.quantity)} ${escapeHtml(candidate.unit)}</option>`
+        ).join('');
+        if (!pantryItems.length) {
+          showToast('Add a pantry item before recording stock.');
+          return;
+        }
+      }
+      document.getElementById('pantry-movement-title').textContent = addStock
+        ? 'Add stock to inventory'
+        : `${restock ? 'Restock' : 'Adjust stock'}${item ? ` · ${item.name}` : ''}`;
+      document.querySelectorAll('.pantry-restock-field').forEach((field) => {
+        field.classList.toggle('hidden', !restock);
+        field.querySelector('input').required = restock;
+      });
+      document.querySelectorAll('.pantry-adjust-field').forEach((field) => {
+        field.classList.toggle('hidden', restock);
+        field.querySelector('select').required = !restock;
+      });
+      const today = new Date();
+      form.elements.namedItem('date').value = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0')
+      ].join('-');
+      document.getElementById('pantry-movement-error').textContent = '';
+      document.getElementById('pantry-movement-dialog').showModal();
+      return;
+    }
+    const deletePantry = event.target.closest('[data-pantry-delete]');
+    if (deletePantry) {
+      const item = pantryItems.find((candidate) => candidate.id === Number(deletePantry.dataset.pantryDelete));
+      if (!item || !confirm(`Delete ${item.name}? This cannot be undone.`)) return;
+      try {
+        const response = await apiFetch(`${API_BASE}/pantry/${item.id}`, { method: 'DELETE', headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not delete pantry item.');
+        await loadPantryData();
+        showToast('Pantry item deleted.');
+      } catch (error) {
+        showToast(error.message || 'Could not delete pantry item.');
+      }
+      return;
+    }
+    const deleteButton = event.target.closest('[data-delete-menu]');
+    if (deleteButton) {
+      const response = await apiFetch(`${API_BASE}/menu-items/${deleteButton.dataset.deleteMenu}`, { method: 'DELETE', headers: authHeaders() });
+      if (response.ok) { await loadMenuItems(); loadManagerDashboard(); showToast('Menu item deleted.'); }
+    }
+    const saveButton = event.target.closest('[data-save-complaint]');
+    const sendButton = event.target.closest('[data-send-complaint]');
+    const actionButton = saveButton || sendButton;
+    if (actionButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = saveButton ? saveButton.dataset.saveComplaint : sendButton.dataset.sendComplaint;
+      const responseField = document.querySelector(`[data-complaint-response="${id}"]`);
+      const responseText = responseField?.value.trim() || '';
+      if (!responseText) {
+        showToast('Enter a response before saving.');
+        return;
+      }
+      const complaint = (window.managerComplaints || [])
+        .find((item) => Number(item.id) === Number(id));
+      if (sendButton && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(complaint?.customer_email || '')) {
+        showToast('A valid customer email is required to send a reply.');
+        return;
+      }
+      actionButton.disabled = true;
+      actionButton.textContent = saveButton ? 'Saving...' : 'Sending...';
+      try {
+        let response;
+        let result;
+        if (saveButton || responseText !== (complaint?.manager_response || '').trim()) {
+          response = await apiFetch(`${API_BASE}/complaints/${id}/response`, {
+            method: 'POST',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ response: responseText })
+          });
+          result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || `Could not save response (HTTP ${response.status}).`);
+          window.managerComplaints = (window.managerComplaints || []).map((item) =>
+            Number(item.id) === Number(id) ? { ...item, ...result } : item
+          );
+        }
+        if (sendButton) {
+          response = await apiFetch(`${API_BASE}/complaints/${id}/send-response`, {
+            method: 'POST',
+            headers: authHeaders({ 'Content-Type': 'application/json' })
+          });
+          result = await response.json().catch(() => ({}));
+        }
+        if (!response.ok) {
+          if (result.id) {
+            window.managerComplaints = (window.managerComplaints || []).map((complaint) =>
+              Number(complaint.id) === Number(id) ? { ...complaint, ...result } : complaint
+            );
+            renderManagerComplaints(window.managerComplaints);
+            updateComplaintBadge(window.managerComplaints);
+            const message = document.querySelector(`[data-complaint-message="${id}"]`);
+            if (message) message.textContent = result.error || 'The request failed. Try again.';
+          }
+          throw new Error(result.error || `Could not ${saveButton ? 'save' : 'send'} response (HTTP ${response.status}).`);
+        }
+        window.managerComplaints = (window.managerComplaints || []).map((complaint) =>
+          Number(complaint.id) === Number(id) ? { ...complaint, ...result } : complaint
+        );
+        renderManagerComplaints(window.managerComplaints);
+        updateComplaintBadge(window.managerComplaints);
+        const message = document.querySelector(`[data-complaint-message="${id}"]`);
+        if (message) message.textContent = saveButton
+          ? 'Saved. This response has not been sent.'
+          : `Sent to ${result.customer_email}.`;
+        showToast(saveButton ? 'Response saved. It has not been sent.' : 'Complaint response email sent.');
+      } catch (error) {
+        const message = document.querySelector(`[data-complaint-message="${id}"]`);
+        const text = error.message || (saveButton ? 'Could not save the response.' : 'Could not send the email.');
+        if (message) message.textContent = text;
+        showToast(text);
+      } finally {
+        if (actionButton.isConnected) {
+          actionButton.disabled = false;
+          actionButton.textContent = saveButton ? 'Save' : 'Send';
+          if (sendButton) syncComplaintSendButton(id);
+        }
+      }
+    }
+  });
+
+  // ================================================================
+  // TOAST NOTIFICATION — shows a small popup message
+  // ================================================================
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  loadMenuItems();
+  setInterval(() => {
+    if (document.visibilityState === 'visible') loadMenuItems();
+  }, 30000);
+  updateCartCounts();
+  restoreOrderConfirmation();
+  startInactivityTracking();
+  restoreAuthState();
+  window.dineDeskPublic = {
+    getMenuItems: () => menuItems,
+    getCart: () => cart,
+    addToCart: addToCartByName,
+    changeQuantity,
+    clearCart,
+    showPage,
+    placeOrder,
+    scrollToSection,
+    showHomeMenu,
+    returnHome,
+    viewLatestOrder,
+    getLatestOrder: () => {
+      if (latestOrder) return latestOrder;
+      try {
+        return JSON.parse(sessionStorage.getItem(ORDER_TRACKING_KEY) || 'null');
+      } catch (error) {
+        sessionStorage.removeItem(ORDER_TRACKING_KEY);
+        return null;
+      }
+    },
+    getCustomerOrderHistoryEmail: () => {
+      const history = getCustomerOrderHistoryState();
+      if (history?.email) return history.email;
+      const order = latestOrder || (() => {
+        try {
+          return JSON.parse(sessionStorage.getItem(ORDER_TRACKING_KEY) || 'null');
+        } catch (error) {
+          sessionStorage.removeItem(ORDER_TRACKING_KEY);
+          return null;
+        }
+      })();
+      return order?.customer_email && order.customer_email !== 'Not provided' ? order.customer_email : '';
+    },
+    getAvailableTables: async () => {
+      const response = await fetch(`${API_BASE}/public/tables/available`);
+      const tables = await response.json();
+      if (!response.ok) throw new Error(tables.error || 'Could not load available tables.');
+      return tables;
+    },
+    getPaymentMethod: loadSavedPaymentMethod,
+    setPaymentMethod: savePaymentMethod,
+    imageUrl: (item) => {
+      return resolveMenuImage(item);
+    }
+  };
+
+</script>
+<script type="module" src="/src/public-app.jsx"></script>
+
+</body>
+</html>
