@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>DineDesk | Rate your solution</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font: 16px/1.5 Arial, sans-serif;
+      color: #18212b;
+      background: #f4f1ea;
+    }
+
+    body {
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      margin: 0;
+      padding: 24px;
+    }
+
+    main {
+      width: min(100%, 520px);
+      padding: 32px;
+      border-top: 5px solid #c9a84c;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 40px #18212b1a;
+    }
+
+    h1 { margin-top: 0; color: #172d3d; }
+    .ratings { display: flex; flex-wrap: wrap; gap: 10px; }
+    button {
+      min-width: 52px;
+      min-height: 48px;
+      border: 1px solid #356b83;
+      border-radius: 6px;
+      background: #fff;
+      color: #172d3d;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover, button:focus-visible { background: #e8f0f3; }
+    button:disabled { cursor: wait; opacity: .6; }
+    .message { min-height: 24px; margin-bottom: 0; }
+    .error { color: #a32121; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>How was your solution?</h1>
+    <p>Your feedback helps the manager evaluate service quality. It is recorded against this complaint.</p>
+    <p>Choose a rating from 1 (not helpful) to 5 (very helpful).</p>
+    <div class="ratings" aria-label="Rate the manager's solution">
+      <button type="button" data-rating="1" aria-label="Rate 1 out of 5">1</button>
+      <button type="button" data-rating="2" aria-label="Rate 2 out of 5">2</button>
+      <button type="button" data-rating="3" aria-label="Rate 3 out of 5">3</button>
+      <button type="button" data-rating="4" aria-label="Rate 4 out of 5">4</button>
+      <button type="button" data-rating="5" aria-label="Rate 5 out of 5">5</button>
+    </div>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+  </main>
+  <script>
+    const token = {{ feedback_token|tojson }};
+    const buttons = [...document.querySelectorAll('[data-rating]')];
+    const message = document.getElementById('message');
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', async () => {
+        buttons.forEach((item) => { item.disabled = true; });
+        message.className = 'message';
+        message.textContent = 'Saving your rating...';
+        try {
+          const response = await fetch('/api/complaints/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              rating: Number(button.dataset.rating)
+            })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Could not save your rating.');
+          message.textContent = result.message;
+        } catch (error) {
+          message.className = 'message error';
+          message.textContent = error.message;
+          buttons.forEach((item) => { item.disabled = false; });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.git/
+.venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.db*
+**/uploads/
+**/ml_models/
+**/node_modules/
+**/dist/
