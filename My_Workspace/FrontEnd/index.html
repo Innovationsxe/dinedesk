@@ -36,6 +36,9 @@
 
 <div id="page-confirmation" class="page order-confirmation-page">
   <main class="order-confirmation-content" aria-labelledby="confirmation-title">
+    <div class="confirmation-topbar">
+      <button class="confirmation-home-button" type="button" onclick="returnHome()" aria-label="Home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10.5 9-7.5 9 7.5M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg></button>
+    </div>
     <p class="menu-eyebrow">DineDesk kitchen</p>
     <div class="confirmation-success-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none"><path d="m6 12.5 4 4 8-9" /></svg>
@@ -60,6 +63,7 @@
       <h2 id="confirmation-order-history-title">Previous orders</h2>
       <p id="confirmation-order-history-message">View your previous orders and their latest status.</p>
       <div id="confirmation-order-history-list"></div>
+      <button id="confirmation-order-history-more" class="confirmation-order-history-more" type="button" aria-expanded="false" hidden>View more</button>
       <button class="btn-secondary" type="button" onclick="showPage('customer-orders')">View all my orders</button>
     </section>
     <section id="loyalty-thank-you" class="loyalty-thank-you" hidden>
@@ -111,7 +115,6 @@
       <button id="rate-order-button" class="btn-secondary" type="button" onclick="toggleOrderRating()" hidden>Rate this order</button>
       <button class="confirmation-complaint-button" type="button" onclick="toggleComplaintForm()">Make a complaint</button>
       <button class="btn-secondary" type="button" onclick="showPage('customer-orders')">View all my orders</button>
-      <button class="btn-secondary confirmation-menu-button" type="button" onclick="placeAnotherOrder()">Back to menu</button>
     </div>
     <section id="confirmation-complaint" class="confirmation-complaint" hidden aria-labelledby="confirmation-complaint-title">
       <div class="complaint-order-summary" id="complaint-order-summary"></div>
@@ -131,7 +134,10 @@
 
 <div id="page-customer-orders" class="page customer-orders-page">
   <main class="customer-orders-content">
-    <p class="menu-eyebrow">DineDesk order history</p>
+    <header class="customer-orders-header">
+      <p class="menu-eyebrow">DineDesk order history</p>
+      <button class="customer-orders-home" type="button" onclick="returnHome()" aria-label="Home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10.5 9-7.5 9 7.5M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg></button>
+    </header>
     <h1>Your orders, <em>all together.</em></h1>
     <p id="customer-order-history-intro">Verify your email once to see your past orders and follow their latest status.</p>
     <form id="customer-order-history-email-form" class="customer-order-history-form">
@@ -148,33 +154,60 @@
     <p id="customer-order-history-message" class="customer-order-history-message" role="status" aria-live="polite"></p>
     <section id="customer-order-history-list" class="customer-order-history-list" aria-live="polite"></section>
     <button id="customer-order-history-signout" class="btn-secondary" type="button" hidden>Use a different email</button>
-    <button class="lux-button lux-button-outline customer-orders-back" type="button" onclick="returnHome()">Back to home</button>
   </main>
 </div>
 
 
 <!-- ================================================================
-     REGISTER PAGE
-     New users fill in this form to create an account
+     LOGIN PAGE
+     Existing users enter their email and password here
      ================================================================ -->
-<div id="page-register" class="page">
+<div id="page-login" class="page">
   <div class="form-page">
+
     <nav>
-      <button class="nav-logo" type="button" onclick="showPage('home')" aria-label="DineDesk home"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg>DineDesk</button>
+      <button class="nav-logo" type="button" onclick="showPage('home')" aria-label="DineDesk login portal, home"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg><span class="login-portal-brand">DineDesk<small>LOGIN PORTAL</small></span></button>
       <div class="nav-links">
-        <button class="nav-btn outline register-home-button" type="button" onclick="showPage('home')">Home</button>
-        <button class="nav-btn outline register-signin-button" type="button" onclick="showPage('login')">Sign in</button>
+        <button class="nav-btn outline login-home-button" type="button" onclick="returnHome()" aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10.5 9-7.5 9 7.5M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg></button>
       </div>
     </nav>
 
     <div class="form-wrapper">
-      <div class="form-card register-luxury-card">
+      <div class="form-card login-luxury-card auth-card-active" id="login-luxury-card" aria-hidden="false">
+        <p class="login-eyebrow">DineDesk · Private staff access</p>
+        <h2>Welcome back</h2>
+        <p class="form-sub">Sign in to continue.</p>
+
+        <form id="login-form" action="#" onsubmit="handleLogin(event)">
+
+          <div class="form-group">
+            <label for="login-email">Email address</label>
+            <input type="email" id="login-email" name="email"
+                   placeholder="john@example.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" name="password"
+                   placeholder="Enter your password" required>
+          </div>
+
+          <button type="submit" class="form-submit">Sign In</button>
+
+        </form>
+
+        <p class="form-footer">
+          Don't have an account?
+          <button type="button" onclick="showPage('register')">Register here</button>
+        </p>
+
+      </div>
+      <div class="form-card register-luxury-card" id="register-luxury-card" aria-hidden="true" inert>
         <p class="register-eyebrow">DineDesk · Team membership</p>
         <h2>Create a staff account</h2>
         <p class="form-sub">Set up your account to access the DineDesk service desk or management suite.</p>
 
         <form id="register-form" action="#" onsubmit="handleRegister(event)">
-
           <div class="form-row">
             <div class="form-group">
               <label for="firstname">First name</label>
@@ -216,63 +249,12 @@
           </div>
 
           <button type="submit" class="form-submit">Create account</button>
-
         </form>
 
         <p class="form-footer">
           Already have an account?
           <button type="button" onclick="showPage('login')">Sign in</button>
         </p>
-
-      </div>
-    </div>
-  </div>
-</div><!-- end register page -->
-
-
-<!-- ================================================================
-     LOGIN PAGE
-     Existing users enter their email and password here
-     ================================================================ -->
-<div id="page-login" class="page">
-  <div class="form-page">
-
-    <nav>
-      <div class="nav-logo" onclick="showPage('home')"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" /></svg>DineDesk</div>
-      <div class="nav-links">
-        <button class="nav-btn outline login-home-button" type="button" onclick="returnHome()">Back to home</button>
-      </div>
-    </nav>
-
-    <div class="form-wrapper">
-      <div class="form-card login-luxury-card">
-        <p class="login-eyebrow">DineDesk · Private staff access</p>
-        <h2>Welcome back</h2>
-        <p class="form-sub">Sign in to continue.</p>
-
-        <form id="login-form" action="#" onsubmit="handleLogin(event)">
-
-          <div class="form-group">
-            <label for="login-email">Email address</label>
-            <input type="email" id="login-email" name="email"
-                   placeholder="john@example.com" required>
-          </div>
-
-          <div class="form-group">
-            <label for="login-password">Password</label>
-            <input type="password" id="login-password" name="password"
-                   placeholder="Enter your password" required>
-          </div>
-
-          <button type="submit" class="form-submit">Sign In</button>
-
-        </form>
-
-        <p class="form-footer">
-          Don't have an account?
-          <span onclick="showPage('register')">Register here</span>
-        </p>
-
       </div>
     </div>
   </div>
@@ -409,6 +391,9 @@
               <th><button type="button" data-pantry-sort="name">Name</button></th>
               <th><button type="button" data-pantry-sort="category">Category</button></th>
               <th><button type="button" data-pantry-sort="quantity">Quantity on hand</button></th>
+              <th>Used today</th>
+              <th>7-day avg/day</th>
+              <th>Days to reorder</th>
               <th>Unit</th>
               <th><button type="button" data-pantry-sort="reorder_level">Reorder level</button></th>
               <th><button type="button" data-pantry-sort="cost_per_unit">Cost per unit</button></th>
@@ -418,12 +403,12 @@
               <th><button type="button" data-pantry-sort="last_updated">Last updated</button></th>
               <th>Actions</th>
             </tr></thead>
-            <tbody id="pantry-items"><tr><td colspan="12" class="manager-empty">Loading pantry items...</td></tr></tbody>
+            <tbody id="pantry-items"><tr><td colspan="15" class="manager-empty">Loading pantry items...</td></tr></tbody>
           </table>
         </div>
       </section>
       <section class="manager-panel">
-        <div class="manager-panel-heading"><h2>Stock movement log</h2><div class="pantry-form-actions"><span class="manager-panel-note">Latest 500</span><button class="manager-action primary" id="pantry-add-stock" type="button">Add stock</button></div></div>
+        <div class="manager-panel-heading"><div><h2>Stock movement log</h2><p class="pantry-subtitle">Record daily food usage from each item’s Usage action. Entries reduce on-hand stock and update the seven-day reorder estimate.</p></div><div class="pantry-form-actions"><span class="manager-panel-note">Latest 500</span><button class="manager-action primary" id="pantry-add-stock" type="button">Add stock</button></div></div>
         <div class="pantry-table-wrap">
           <table class="pantry-table movement-table">
             <thead><tr><th>Date</th><th>Item</th><th>Change</th><th>Reason</th><th>Supplier / cost</th><th>Performed by</th></tr></thead>
@@ -667,21 +652,35 @@
   let inactivityTimer = null;
   let waiterOrderRefreshTimer = null;
   let managerRefreshTimer = null;
+  let managerComplaintRefreshTimer = null;
   const INACTIVITY_LIMIT_MS = 10 * 60 * 1000;
-  const ATTENDED_COMPLAINTS_KEY = 'bundu_attended_complaints';
 
   // ================================================================
   // NAVIGATION — showPage controls which page is visible
   // It hides all pages then shows only the requested one
   // ================================================================
   function showPage(name) {
+    const pageName = name === 'register' ? 'login' : name;
+    if (pageName === 'login') {
+      const showingRegister = name === 'register';
+      const loginCard = document.getElementById('login-luxury-card');
+      const registerCard = document.getElementById('register-luxury-card');
+      loginCard.classList.toggle('auth-card-active', !showingRegister);
+      registerCard.classList.toggle('auth-card-active', showingRegister);
+      loginCard.setAttribute('aria-hidden', String(showingRegister));
+      registerCard.setAttribute('aria-hidden', String(!showingRegister));
+      loginCard.inert = showingRegister;
+      registerCard.inert = !showingRegister;
+      document.querySelector('#page-login .form-wrapper').classList.toggle('register-mode', showingRegister);
+    }
+
     // Get all elements with class "page"
     document.querySelectorAll('.page').forEach(p => {
       p.classList.remove('active'); // hide every page
     });
 
     // Show only the requested page by adding "active" class
-    const target = document.getElementById('page-' + name);
+    const target = document.getElementById('page-' + pageName);
     if (target) {
       target.classList.add('active');
       window.scrollTo(0, 0); // scroll to top when changing pages
@@ -705,6 +704,7 @@
         loadManagerDashboard();
         loadManagerShifts();
         loadManagerStaffRoster();
+        refreshUnreadComplaintCount();
         if (managerRefreshTimer === null) {
           managerRefreshTimer = setInterval(() => {
             if (document.visibilityState === 'visible'
@@ -714,9 +714,23 @@
             }
           }, 30000);
         }
-      } else if (managerRefreshTimer !== null) {
-        clearInterval(managerRefreshTimer);
-        managerRefreshTimer = null;
+        if (managerComplaintRefreshTimer === null) {
+          managerComplaintRefreshTimer = setInterval(() => {
+            if (document.visibilityState === 'visible'
+              && document.getElementById('page-manager-dashboard').classList.contains('active')) {
+              refreshUnreadComplaintCount();
+            }
+          }, 10000);
+        }
+      } else {
+        if (managerRefreshTimer !== null) {
+          clearInterval(managerRefreshTimer);
+          managerRefreshTimer = null;
+        }
+        if (managerComplaintRefreshTimer !== null) {
+          clearInterval(managerComplaintRefreshTimer);
+          managerComplaintRefreshTimer = null;
+        }
       }
       if (name === 'confirmation') startOrderTracking();
       else stopOrderTracking();
@@ -918,14 +932,35 @@
     if (!state?.token) {
       message.textContent = 'Verify your email once to see your other orders and their latest status.';
       container.replaceChildren();
+      delete container.dataset.viewMoreExpanded;
+      document.getElementById('confirmation-order-history-more').hidden = true;
       return;
     }
     message.textContent = `Showing past orders for ${state.email}.`;
     const previousOrders = orders.filter((order) => String(order.id) !== String(latestOrder?.id));
+    const expanded = container.dataset.viewMoreExpanded === 'true';
     container.innerHTML = previousOrders.length
-      ? previousOrders.map(customerOrderHistoryCard).join('')
+      ? previousOrders.map((order, index) => `<div class="confirmation-order-history-entry"${!expanded && index >= 5 ? ' hidden' : ''}>${customerOrderHistoryCard(order)}</div>`).join('')
       : '<p class="customer-order-history-empty">There are no earlier orders for this email yet.</p>';
+    const viewMoreButton = document.getElementById('confirmation-order-history-more');
+    if (viewMoreButton) {
+      viewMoreButton.hidden = previousOrders.length <= 5;
+      viewMoreButton.textContent = expanded ? 'View less' : 'View more';
+      viewMoreButton.setAttribute('aria-expanded', String(expanded));
+    }
   }
+
+  document.getElementById('confirmation-order-history-more').addEventListener('click', (event) => {
+    const button = event.currentTarget;
+    const container = document.getElementById('confirmation-order-history-list');
+    const expanded = container.dataset.viewMoreExpanded !== 'true';
+    container.dataset.viewMoreExpanded = String(expanded);
+    container.querySelectorAll('.confirmation-order-history-entry').forEach((entry, index) => {
+      entry.hidden = !expanded && index >= 5;
+    });
+    button.textContent = expanded ? 'View less' : 'View more';
+    button.setAttribute('aria-expanded', String(expanded));
+  });
 
   async function loadCustomerOrderHistory() {
     const state = getCustomerOrderHistoryState();
@@ -1859,8 +1894,13 @@
     const paymentMethod = savePaymentMethod(document.getElementById('payment-method').value);
     const orderTypeError = document.getElementById('order-type-error');
     orderTypeError.textContent = '';
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) {
-      orderTypeError.textContent = 'Enter a valid email address to access your order history.';
+    if (paymentMethod === 'online' && !email) {
+      orderTypeError.textContent = 'Add an email for online payment, or choose cash/card.';
+      document.getElementById('customer-email').focus();
+      return;
+    }
+    if (email && (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254)) {
+      orderTypeError.textContent = 'Enter a valid email address, or leave it blank.';
       document.getElementById('customer-email').focus();
       return;
     }
@@ -2143,12 +2183,8 @@
         <article class="manager-list-item"><div><strong>${index + 1}. ${escapeHtml(name)}</strong><span>${performance.quantity} item${performance.quantity === 1 ? '' : 's'} sold today</span></div><strong>R${performance.revenue.toFixed(2)}</strong></article>
       `).join('') : '<p class="manager-empty">No items have been bought today.</p>';
 
-      complaintsList.innerHTML = complaints.length ? complaints.map((complaint) => `
-        <article class="manager-list-item manager-complaint-item"><div><strong>${escapeHtml(complaint.reference || `Complaint #${complaint.id}`)}</strong><span>${escapeHtml(complaint.category || 'General feedback')} · ${escapeHtml(complaint.status)}</span><small>Received: ${escapeHtml(formatOrderDateTime(complaint.created_at))} · ${complaint.identity_mode === 'add_email' ? `Reply email: ${escapeHtml(complaint.customer_email)}` : 'Anonymous complaint'}</small></div><p>${escapeHtml(complaint.description || complaint.message)}</p></article>
-      `).join('') : '<p class="manager-empty">No complaints recorded yet.</p>';
       setManagerListPreview(ordersList);
       setManagerListPreview(menuList);
-      setManagerListPreview(complaintsList);
       const ordersStatus = document.getElementById('manager-orders-status');
       if (ordersStatus) {
         ordersStatus.classList.remove('is-offline');
@@ -2156,6 +2192,7 @@
         ordersStatus.querySelector('span').textContent = 'Live';
       }
       updateComplaintBadge(complaints);
+      renderManagerComplaintPreview(complaints);
       renderManagerMenu(menu);
       renderManagerComplaints(complaints);
       await Promise.all([loadManagerPromotions(), loadManagerShifts()]);
@@ -2270,7 +2307,11 @@
         const statusClass = item.status.toLowerCase().replaceAll(' ', '-');
         return `<tr class="${item.status === 'Out of Stock' ? 'out-of-stock' : ''}">
           <td>#${escapeHtml(item.id)}</td><td><strong>${escapeHtml(item.name)}</strong></td>
-          <td>${escapeHtml(item.category)}</td><td>${escapeHtml(item.quantity)}</td><td>${escapeHtml(item.unit)}</td>
+          <td>${escapeHtml(item.category)}</td><td>${escapeHtml(item.quantity)}</td>
+          <td>${escapeHtml(item.used_today || 0)} ${escapeHtml(item.unit)}</td>
+          <td>${Number(item.average_daily_usage || 0).toFixed(2)} ${escapeHtml(item.unit)}</td>
+          <td>${item.days_until_reorder == null ? '—' : `${Number(item.days_until_reorder).toFixed(1)} days`}</td>
+          <td>${escapeHtml(item.unit)}</td>
           <td>${escapeHtml(item.reorder_level)}</td><td>R${Number(item.cost_per_unit).toFixed(2)}</td>
           <td>${escapeHtml(item.supplier || '—')}</td><td>${escapeHtml(formatPantryDate(item.expiry_date))}</td>
           <td><span class="pantry-status ${statusClass}">${escapeHtml(item.status)}</span></td>
@@ -2278,11 +2319,12 @@
           <td><div class="pantry-row-actions">
             <button class="manager-action" type="button" data-pantry-edit="${item.id}">Edit</button>
             <button class="manager-action" type="button" data-pantry-restock="${item.id}">Restock</button>
+            <button class="manager-action" type="button" data-pantry-usage="${item.id}">Record usage</button>
             <button class="manager-action" type="button" data-pantry-adjust="${item.id}">Adjust</button>
             <button class="manager-action danger" type="button" data-pantry-delete="${item.id}">Delete</button>
           </div></td>
         </tr>`;
-      }).join('') : '<tr><td colspan="12" class="manager-empty">No pantry items match these filters.</td></tr>';
+      }).join('') : '<tr><td colspan="15" class="manager-empty">No pantry items match these filters.</td></tr>';
     }
 
     function renderPantryAlerts() {
@@ -2295,8 +2337,13 @@
       const expiring = pantryItems.filter((item) =>
         item.expiry_date && item.expiry_date >= today && item.expiry_date <= sevenDays
       );
+      const forecasted = pantryItems.filter((item) =>
+        item.days_until_reorder != null && item.days_until_reorder <= 7
+        && item.quantity > item.reorder_level
+      );
       panel.innerHTML = [
         ...critical.map((item) => `<div class="pantry-alert ${['Out of Stock', 'Expired'].includes(item.status) ? 'danger' : ''}"><strong>${escapeHtml(item.status)}:</strong> ${escapeHtml(item.name)}${item.status === 'Low Stock' ? ` · ${escapeHtml(item.quantity)} ${escapeHtml(item.unit)} left (reorder at ${escapeHtml(item.reorder_level)})` : ''}${item.status === 'Expired' ? ` · expired ${escapeHtml(formatPantryDate(item.expiry_date))}` : ''}</div>`),
+        ...forecasted.map((item) => `<div class="pantry-alert"><strong>Usage forecast:</strong> ${escapeHtml(item.name)} may reach its reorder level in about ${Number(item.days_until_reorder).toFixed(1)} days.</div>`),
         ...expiring.map((item) => `<div class="pantry-alert"><strong>Expiring soon:</strong> ${escapeHtml(item.name)} · ${escapeHtml(formatPantryDate(item.expiry_date))}</div>`)
       ].join('') || '<div class="pantry-alert" style="border-color:#15803d;background:#dcfce7;color:#166534">All pantry items are in good shape.</div>';
     }
@@ -2305,7 +2352,7 @@
       const itemList = document.getElementById('pantry-items');
       const movementsList = document.getElementById('pantry-movements');
       document.getElementById('pantry-error').textContent = '';
-      itemList.innerHTML = '<tr><td colspan="12" class="manager-empty">Loading pantry items...</td></tr>';
+      itemList.innerHTML = '<tr><td colspan="15" class="manager-empty">Loading pantry items...</td></tr>';
       try {
         const [itemsResponse, movementsResponse] = await Promise.all([
           apiFetch(`${API_BASE}/pantry`, { headers: authHeaders() }),
@@ -2337,7 +2384,7 @@
         loadManagerPantrySummary();
       } catch (error) {
         document.getElementById('pantry-error').textContent = error.message || 'Could not load pantry data.';
-        itemList.innerHTML = '<tr><td colspan="12" class="manager-empty">Pantry data could not be loaded.</td></tr>';
+        itemList.innerHTML = '<tr><td colspan="15" class="manager-empty">Pantry data could not be loaded.</td></tr>';
         movementsList.innerHTML = '<tr><td colspan="6" class="manager-empty">Stock movement log could not be loaded.</td></tr>';
       }
     }
@@ -2355,9 +2402,38 @@
     setManagerListPreview(list);
   }
 
+  function renderManagerComplaintPreview(complaints) {
+    const list = document.getElementById('manager-complaints');
+    if (!list) return;
+    list.innerHTML = complaints.length ? complaints.map((complaint) => {
+      const sent = complaint.email_status === 'sent' || Boolean(complaint.sent_at);
+      const readStatus = sent
+        ? 'Sent'
+        : complaint.manager_viewed_at ? 'Opened' : 'Unread';
+      const readStatusClass = sent
+        ? 'sent'
+        : complaint.manager_viewed_at ? 'opened' : 'unread';
+      return `
+        <article class="manager-list-item manager-complaint-item${sent ? ' is-sent' : ''}">
+          <div>
+            <strong>${escapeHtml(complaint.reference || `Complaint #${complaint.id}`)}</strong>
+            <span>${escapeHtml(complaint.category || 'General feedback')} · ${escapeHtml(complaint.status)}</span>
+            <small>Received: ${escapeHtml(formatOrderDateTime(complaint.created_at))} · ${complaint.identity_mode === 'add_email' ? `Reply email: ${escapeHtml(complaint.customer_email)}` : 'Anonymous complaint'}</small>
+            <span class="manager-complaint-read-status ${readStatusClass}">${readStatus}</span>
+          </div>
+          <p>${escapeHtml(complaint.description || complaint.message)}</p>
+        </article>`;
+    }).join('') : '<p class="manager-empty">No complaints recorded yet.</p>';
+    setManagerListPreview(list);
+  }
+
   function renderManagerComplaints(complaints) {
     const list = document.getElementById('manager-complaints-management');
     if (!list) return;
+    const expandedIds = new Set(
+      [...list.querySelectorAll('details[data-manager-complaint][open]')]
+        .map((card) => Number(card.dataset.managerComplaint))
+    );
     const searchTerm = (
       document.getElementById('manager-complaint-search')?.value || ''
     ).trim().toLocaleLowerCase();
@@ -2407,15 +2483,22 @@
           : complaint.status === 'Waiting for Customer'
             ? 'waiting'
             : 'open';
+      const unread = !complaint.manager_viewed_at;
+      const responseSent = complaint.email_status === 'sent' || Boolean(complaint.sent_at);
+      const readStatus = responseSent
+        ? 'Sent'
+        : unread ? 'Unread' : 'Opened';
+      const readStatusClass = responseSent ? 'sent' : unread ? 'unread' : 'opened';
       return `
-        <article class="manager-complaint-card">
-          <div class="manager-complaint-heading">
+        <details class="manager-complaint-card${unread ? ' is-unread' : ''}${responseSent ? ' is-sent' : ''}" data-manager-complaint="${complaint.id}">
+          <summary class="manager-complaint-heading">
             <div class="manager-complaint-title">
               <strong>${escapeHtml(complaint.reference || `Complaint #${complaint.id}`)}</strong>
               <span class="manager-complaint-category">${escapeHtml(complaint.category || 'General feedback')}${complaint.severity ? ` · ${escapeHtml(complaint.severity)}` : ''}</span>
             </div>
-            <span class="manager-complaint-status-badge ${statusClass}">${escapeHtml(complaint.status)}</span>
-          </div>
+            ${complaint.status !== 'Resolved' ? `<span class="manager-complaint-status-badge ${statusClass}">${escapeHtml(complaint.status)}</span>` : ''}
+            <span class="manager-complaint-read-status ${readStatusClass}">${readStatus}</span>
+          </summary>
           <p class="manager-complaint-description">${escapeHtml(complaint.description || complaint.message)}</p>
           <div class="manager-complaint-meta">
             <span>${escapeHtml(formatOrderDateTime(complaint.created_at))}</span>
@@ -2423,10 +2506,10 @@
             <span class="complaint-email-status ${complaint.email_status === 'sent' ? 'sent' : complaint.email_status === 'failed' ? 'failed' : ''}">${escapeHtml(emailStatus)}</span>
           </div>
           ${complaint.email_error ? `<p class="complaint-email-error" role="status">${escapeHtml(complaint.email_error)}</p>` : ''}
-          <div class="manager-complaint-controls">
+          ${complaint.status !== 'Resolved' ? `<div class="manager-complaint-controls">
             <label for="manager-complaint-status-${complaint.id}">Status</label>
-            <select id="manager-complaint-status-${complaint.id}" class="manager-complaint-status" data-complaint-id="${complaint.id}">${['Open', 'Under Review', 'Waiting for Customer', 'Resolved'].map((status) => `<option ${status === complaint.status ? 'selected' : ''}>${status}</option>`).join('')}</select>
-          </div>
+            <select id="manager-complaint-status-${complaint.id}" class="manager-complaint-status" data-complaint-id="${complaint.id}">${['Open', 'Under Review', 'Waiting for Customer'].map((status) => `<option ${status === complaint.status ? 'selected' : ''}>${status}</option>`).join('')}</select>
+          </div>` : ''}
           <div class="manager-complaint-ml">
             <strong>AI solution</strong>
             <p>Generate an editable reply for this customer. Review it before saving or sending; it is never sent automatically.</p>
@@ -2445,11 +2528,62 @@
           </div>
           ${!hasEmail ? '<small class="complaint-send-help">A valid customer email is required to send a reply.</small>' : ''}
           <p class="manager-complaint-message" data-complaint-message="${complaint.id}" role="status" aria-live="polite"></p>
-        </article>`;
+        </details>`;
     }).join('') : `<p class="manager-empty">${complaints.length
       ? 'No complaints match these filters.'
       : 'No complaints have been received yet.'}</p>`;
+    list.querySelectorAll('details[data-manager-complaint]').forEach((card) => {
+      if (expandedIds.has(Number(card.dataset.managerComplaint))) card.open = true;
+    });
     list.querySelectorAll('.manager-complaint-response').forEach(resizeComplaintResponse);
+    list.querySelectorAll('details[data-manager-complaint]').forEach((card) => {
+      card.querySelector('summary')?.addEventListener('click', async () => {
+        if (card.open || card.dataset.markingRead) return;
+        const complaint = (window.managerComplaints || []).find(
+          (item) => Number(item.id) === Number(card.dataset.managerComplaint)
+        );
+        if (!complaint || complaint.manager_viewed_at) return;
+        card.dataset.markingRead = 'true';
+        const viewedAt = new Date().toISOString();
+        window.managerComplaints = window.managerComplaints.map((item) =>
+          Number(item.id) === Number(complaint.id)
+            ? { ...item, manager_viewed_at: viewedAt }
+            : item
+        );
+        card.classList.remove('is-unread');
+        const readStatus = card.querySelector('.manager-complaint-read-status');
+        if (readStatus && complaint.email_status !== 'sent' && !complaint.sent_at) {
+          readStatus.textContent = 'Opened';
+          readStatus.className = 'manager-complaint-read-status opened';
+        }
+        updateComplaintBadge(window.managerComplaints);
+        renderManagerComplaintPreview(window.managerComplaints);
+        try {
+          const response = await apiFetch(
+            `${API_BASE}/complaints/${complaint.id}/open`,
+            { method: 'POST', headers: authHeaders() }
+          );
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Could not mark complaint as opened.');
+          window.managerComplaints = window.managerComplaints.map((item) =>
+            Number(item.id) === Number(result.id)
+              ? { ...item, manager_viewed_at: result.manager_viewed_at }
+              : item
+          );
+        } catch (error) {
+          delete card.dataset.markingRead;
+          window.managerComplaints = window.managerComplaints.map((item) =>
+            Number(item.id) === Number(complaint.id)
+              ? { ...item, manager_viewed_at: complaint.manager_viewed_at }
+              : item
+          );
+          renderManagerComplaints(window.managerComplaints);
+          updateComplaintBadge(window.managerComplaints);
+          renderManagerComplaintPreview(window.managerComplaints);
+          showToast(error.message || 'Could not mark complaint as opened.');
+        }
+      });
+    });
     setManagerListPreview(list);
   }
 
@@ -2720,29 +2854,30 @@
       || Boolean(complaint.email_started_at);
   }
 
-  function getAttendedComplaintIds() {
-    try {
-      return JSON.parse(localStorage.getItem(ATTENDED_COMPLAINTS_KEY) || '[]').map(Number);
-    } catch (error) {
-      return [];
-    }
-  }
-
   function updateComplaintBadge(complaints) {
     const badge = document.getElementById('manager-complaints-count');
     if (!badge) return;
-    const attended = getAttendedComplaintIds();
-    const newCount = complaints.filter((complaint) => complaint.status !== 'Resolved' && !attended.includes(Number(complaint.id))).length;
-    badge.textContent = newCount;
-    badge.classList.toggle('has-new', newCount > 0);
+    const unreadCount = complaints.filter((complaint) => !complaint.manager_viewed_at).length;
+    badge.textContent = unreadCount;
+    badge.title = `${unreadCount} unread ${unreadCount === 1 ? 'complaint' : 'complaints'}`;
+    badge.classList.toggle('has-new', unreadCount > 0);
   }
 
-  function markComplaintsAttended() {
-    const complaints = window.managerComplaints || [];
-    const attended = new Set(getAttendedComplaintIds());
-    complaints.forEach((complaint) => attended.add(Number(complaint.id)));
-    localStorage.setItem(ATTENDED_COMPLAINTS_KEY, JSON.stringify([...attended]));
-    updateComplaintBadge(complaints);
+  async function refreshUnreadComplaintCount() {
+    try {
+      const response = await apiFetch(`${API_BASE}/manager/complaints/unread-count`, {
+        headers: authHeaders()
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not refresh unread complaint count.');
+      const badge = document.getElementById('manager-complaints-count');
+      if (!badge) return;
+      badge.textContent = result.count;
+      badge.title = `${result.count} unread ${result.count === 1 ? 'complaint' : 'complaints'}`;
+      badge.classList.toggle('has-new', result.count > 0);
+    } catch (error) {
+      console.error(error.message || 'Could not refresh unread complaint count.');
+    }
   }
 
   async function loadManagerPromotions() {
@@ -2934,11 +3069,11 @@
       <thead><tr><th>Order ID</th><th>Customer</th><th>Order</th><th>Table</th><th>Order status</th><th>Waiter</th><th>Actions</th></tr></thead>
       <tbody>${orders.map((order) => {
         const statuses = order.order_type === 'Dine in'
-          ? ['Received', 'Preparing', 'Ready', 'Served', 'Cancelled']
-          : ['Received', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
+            ? ['Received', 'Preparing', 'Ready', 'Served']
+            : ['Received', 'Preparing', 'Ready', 'Completed'];
         if (!statuses.includes(order.status)) statuses.push(order.status);
         const statusControl = editable
-          ? `<select class="order-status" data-order-id="${order.id}" aria-label="Update status for ${escapeHtml(order.order_number)}">${statuses.map((status) => `<option ${status === order.status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}</select>`
+            ? `<select class="order-status" data-order-id="${order.id}" aria-label="Update status for ${escapeHtml(order.order_number)}" ${order.status === 'Cancelled' ? 'disabled' : ''}>${statuses.map((status) => `<option ${status === order.status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}</select>`
           : `<span class="staff-status-pill">${escapeHtml(order.status)}</span>`;
         const tableControl = editable && order.order_type === 'Dine in' && !order.table_number
           ? `<select class="table-assignment" data-order-id="${order.id}" aria-label="Assign table to ${escapeHtml(order.order_number)}"><option value="">Assign table</option>${window.waiterAvailableTables.map((table) => `<option value="${escapeHtml(table)}">Table ${escapeHtml(table)}</option>`).join('')}</select>`
@@ -2958,6 +3093,17 @@
         const claimControl = editable && !order.waiter_id
           ? `<button class="staff-row-action" type="button" data-order-claim="${order.id}">Assign to me</button>`
           : '';
+        const servedAt = Date.parse(order.served_at || '');
+        const assignedToCurrentUser = currentUser?.role === 'manager'
+          || Number(order.waiter_id) === Number(currentUser?.id);
+        const canCancelOverdue = editable && assignedToCurrentUser
+          && order.order_type === 'Dine in' && order.status === 'Served'
+          && order.payment_provider !== 'paystack' && order.payment_status === 'unpaid'
+          && Number.isFinite(servedAt)
+          && Date.now() - servedAt >= 2 * 60 * 60 * 1000;
+        const cancelControl = canCancelOverdue
+          ? `<button class="staff-row-action danger" type="button" data-order-cancel="${order.id}">Cancel overdue</button>`
+          : '';
         return `<tr>
           <td><strong>${escapeHtml(order.order_number)}</strong><small>#${escapeHtml(order.id)}</small></td>
           <td>${escapeHtml(order.customer_name || 'Guest customer')}</td>
@@ -2965,7 +3111,7 @@
           <td>${tableControl}</td>
           <td>${statusControl}</td>
           <td>${escapeHtml(order.waiter_name || 'Unassigned')}</td>
-          <td class="staff-row-actions">${claimControl}${payControl}</td>
+          <td class="staff-row-actions">${claimControl}${payControl}${cancelControl}</td>
         </tr>`;
       }).join('')}</tbody></table></div>`;
   }
@@ -3235,7 +3381,6 @@
   document.querySelectorAll('[data-manager-section]').forEach((tab) => tab.addEventListener('click', () => {
     document.querySelectorAll('[data-manager-section]').forEach((item) => item.classList.toggle('active', item === tab));
     document.querySelectorAll('.manager-section-panel').forEach((panel) => panel.classList.toggle('hidden', panel.id !== tab.dataset.managerSection));
-    if (tab.dataset.managerSection === 'manager-complaints-section') markComplaintsAttended();
     if (tab.dataset.managerSection === 'manager-pantry-section') loadPantryData();
     if (tab.dataset.managerSection === 'manager-shifts-section') loadManagerShifts();
     if (tab.dataset.managerSection === 'manager-staff-section') loadManagerStaffRoster();
@@ -3314,15 +3459,16 @@
     const values = Object.fromEntries(new FormData(form).entries());
     const type = values.movement_type;
     const itemId = values.item_id || values.selected_item;
-    const body = type === 'restock'
+    const action = type === 'usage' ? 'adjust' : type;
+    const body = action === 'restock'
       ? { quantity_received: Number(values.quantity), supplier: values.supplier.trim(), cost_per_unit: Number(values.cost_per_unit), date: values.date }
-      : { quantity: Number(values.quantity), reason: values.reason, date: values.date };
+      : { quantity: Number(values.quantity), reason: type === 'usage' ? 'Usage' : values.reason, date: values.date };
     const errorNode = document.getElementById('pantry-movement-error');
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
     errorNode.textContent = '';
     try {
-      const response = await apiFetch(`${API_BASE}/pantry/${itemId}/${type}`, {
+      const response = await apiFetch(`${API_BASE}/pantry/${itemId}/${action}`, {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(body)
@@ -3332,7 +3478,7 @@
       form.reset();
       document.getElementById('pantry-movement-dialog').close();
       await loadPantryData();
-      showToast(type === 'restock' ? `${result.name} restocked.` : `${result.name} stock adjusted.`);
+      showToast(type === 'restock' ? `${result.name} restocked.` : type === 'usage' ? `${result.name} daily usage recorded.` : `${result.name} stock adjusted.`);
     } catch (error) {
       errorNode.textContent = error.message || 'Could not save stock movement.';
     } finally {
@@ -3654,6 +3800,25 @@
       await downloadManagerExport(exportButton.dataset.managerExport, exportButton);
       return;
     }
+    const cancelOrderButton = event.target.closest('[data-order-cancel]');
+    if (cancelOrderButton) {
+      if (!confirm('Cancel this unpaid dine-in order? It has been served for at least two hours.')) return;
+      cancelOrderButton.disabled = true;
+      try {
+        const response = await apiFetch(
+          `${API_BASE}/orders/${cancelOrderButton.dataset.orderCancel}/cancel`,
+          { method: 'PATCH', headers: authHeaders() }
+        );
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not cancel this order.');
+        showToast('Overdue order cancelled.');
+        await loadWaiterOrders(activeWaiterView);
+      } catch (error) {
+        showToast(error.message || 'Could not cancel this order.');
+        cancelOrderButton.disabled = false;
+      }
+      return;
+    }
     const paidOrder = event.target.closest('[data-order-mark-paid]');
     const claimOrder = event.target.closest('[data-order-claim]');
     const paidReservation = event.target.closest('[data-reservation-fee-paid]');
@@ -3688,16 +3853,18 @@
       if (item) showPantryItemForm(item);
       return;
     }
-    const movementButton = event.target.closest('[data-pantry-restock], [data-pantry-adjust], #pantry-add-stock');
+    const movementButton = event.target.closest('[data-pantry-restock], [data-pantry-usage], [data-pantry-adjust], #pantry-add-stock');
     if (movementButton) {
       const addStock = movementButton.id === 'pantry-add-stock';
       const restock = addStock || movementButton.hasAttribute('data-pantry-restock');
-      const itemId = addStock ? '' : movementButton.dataset.pantryRestock || movementButton.dataset.pantryAdjust;
+      const usage = movementButton.hasAttribute('data-pantry-usage');
+      const itemId = addStock ? '' : movementButton.dataset.pantryRestock
+        || movementButton.dataset.pantryUsage || movementButton.dataset.pantryAdjust;
       const item = pantryItems.find((candidate) => candidate.id === Number(itemId));
       const form = document.getElementById('pantry-movement-form');
       form.reset();
       form.elements.namedItem('item_id').value = itemId;
-      form.elements.namedItem('movement_type').value = restock ? 'restock' : 'adjust';
+      form.elements.namedItem('movement_type').value = restock ? 'restock' : usage ? 'usage' : 'adjust';
       const itemSelectField = document.querySelector('.pantry-item-select-field');
       const itemSelect = form.elements.namedItem('selected_item');
       itemSelectField.classList.toggle('hidden', !addStock);
@@ -3713,14 +3880,15 @@
       }
       document.getElementById('pantry-movement-title').textContent = addStock
         ? 'Add stock to inventory'
-        : `${restock ? 'Restock' : 'Adjust stock'}${item ? ` · ${item.name}` : ''}`;
+        : `${restock ? 'Restock' : usage ? 'Record daily usage' : 'Adjust stock'}${item ? ` · ${item.name}` : ''}`;
       document.querySelectorAll('.pantry-restock-field').forEach((field) => {
         field.classList.toggle('hidden', !restock);
         field.querySelector('input').required = restock;
       });
       document.querySelectorAll('.pantry-adjust-field').forEach((field) => {
-        field.classList.toggle('hidden', restock);
-        field.querySelector('select').required = !restock;
+        field.classList.toggle('hidden', restock || usage);
+        field.querySelector('select').required = !restock && !usage;
+        field.querySelector('select').value = 'Usage';
       });
       const today = new Date();
       form.elements.namedItem('date').value = [
@@ -3813,6 +3981,7 @@
             );
             renderManagerComplaints(window.managerComplaints);
             updateComplaintBadge(window.managerComplaints);
+            renderManagerComplaintPreview(window.managerComplaints);
             const message = document.querySelector(`[data-complaint-message="${id}"]`);
             if (message) message.textContent = result.error || 'The request failed. Try again.';
           }
@@ -3823,6 +3992,7 @@
         );
         renderManagerComplaints(window.managerComplaints);
         updateComplaintBadge(window.managerComplaints);
+        renderManagerComplaintPreview(window.managerComplaints);
         const message = document.querySelector(`[data-complaint-message="${id}"]`);
         if (message) message.textContent = saveButton
           ? 'Saved. This response has not been sent.'

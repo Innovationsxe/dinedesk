@@ -44,6 +44,7 @@ My_Workspace/FrontEnd/*
 !My_Workspace/FrontEnd/images/
 My_Workspace/FrontEnd/images/*
 !My_Workspace/FrontEnd/images/Bundu.png
+!My_Workspace/FrontEnd/images/dinedesk-cart-mark.png
 !My_Workspace/FrontEnd/src/
 My_Workspace/FrontEnd/src/*
 !My_Workspace/FrontEnd/src/public-app.jsx

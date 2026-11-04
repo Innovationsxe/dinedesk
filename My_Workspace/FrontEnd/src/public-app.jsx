@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import cartBrandMark from '../images/dinedesk-cart-mark.png';
 import './public-app.css';
 
 const publicApi = window.dineDeskPublic;
@@ -9,25 +10,6 @@ function BrandMark() {
   return <svg className="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M4 17h16M6 17a6 6 0 0 1 12 0M12 5v1M4 20h16" />
   </svg>;
-}
-
-function MenuPhotoCredits({ items }) {
-  const credits = items.flatMap((item) => {
-    if (!item.image?.includes('wikimedia.org')) return [];
-    const segments = new URL(item.image).pathname.split('/').filter(Boolean);
-    const fileName = segments.includes('thumb') ? segments.at(-2) : segments.at(-1);
-    if (!fileName) return [];
-    const fileTitle = decodeURIComponent(fileName).replaceAll('_', ' ');
-    const creditUrl = `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(fileTitle).replaceAll('%20', '_')}`;
-    return [{ name: item.name, creditUrl }];
-  });
-  if (!credits.length) return null;
-  return <details className="menu-photo-credits">
-    <summary>Menu photo credits</summary>
-    <ul>
-      {credits.map(({ name, creditUrl }) => <li key={creditUrl}><a href={creditUrl} target="_blank" rel="noreferrer">{name} — image source and licence</a></li>)}
-    </ul>
-  </details>;
 }
 
 function useMenuItems() {
@@ -91,7 +73,6 @@ function FoodCard({ item, index = 0, compact = false }) {
         <div className="food-card-kicker"><span>{item.category || 'From the kitchen'}</span><span className="food-card-price">R{price.toFixed(2)}</span></div>
         <h3>{item.name}</h3>
         <p>{item.description || 'Thoughtfully prepared with the finest ingredients.'}</p>
-        {compact && <button type="button" className="text-link" onClick={() => publicApi.addToCart(item.name)}>Add to your order <span aria-hidden="true">↗</span></button>}
       </div>
     </Reveal>
   );
@@ -102,6 +83,58 @@ function CartButton({ count }) {
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10.1a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 8H6" /><circle cx="10" cy="20" r="1" /><circle cx="18" cy="20" r="1" /></svg>
     <span>View basket</span><b>{count}</b>
   </button>;
+}
+
+function RestaurantFooter({ kitchen = false }) {
+  const browseMenu = () => {
+    if (kitchen) {
+      publicApi.returnHome();
+      window.setTimeout(() => publicApi.scrollToSection('explore-menu'), 100);
+      return;
+    }
+    publicApi.scrollToSection('explore-menu');
+  };
+  const browseKitchen = () => {
+    if (kitchen) {
+      publicApi.returnHome();
+      window.setTimeout(() => publicApi.scrollToSection('kitchen-story'), 100);
+      return;
+    }
+    publicApi.scrollToSection('kitchen-story');
+  };
+  const backToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  return (
+    <footer className="restaurant-footer">
+      <div className="restaurant-footer-grid">
+        <div className="restaurant-footer-brand">
+          <h2><BrandMark />DineDesk</h2>
+          <p>DineDesk brings the menu, ordering and thoughtful restaurant service together in one easy experience.</p>
+          <span>Thoughtful dining, made easy.</span>
+        </div>
+        <div className="restaurant-footer-column">
+          <h3>Explore</h3>
+          <button type="button" onClick={browseMenu}>Browse the menu</button>
+          <button type="button" onClick={browseKitchen}>Our kitchen</button>
+        </div>
+        <div className="restaurant-footer-column">
+          <h3>Guest service</h3>
+          <button type="button" onClick={() => publicApi.showPage('orders')}>Start an order</button>
+          <button type="button" onClick={() => publicApi.showPage('customer-orders')}>View past orders</button>
+          <p>Choose dine-in or takeaway when placing your order.</p>
+        </div>
+        <div className="restaurant-footer-column">
+          <h3>At your table</h3>
+          <p>Our team is here to make every part of your meal feel easy, from choosing a favourite to enjoying the final bite.</p>
+          <button type="button" onClick={backToTop}>Back to the top</button>
+        </div>
+      </div>
+      <div className="restaurant-footer-bottom">
+        <span>© {new Date().getFullYear()} DineDesk. All rights reserved.</span>
+        <span>Made for memorable meals.</span>
+      </div>
+    </footer>
+  );
 }
 
 function HomePage() {
@@ -161,7 +194,7 @@ function HomePage() {
             <p className="lux-hero-description lux-hero-reveal">An elegant pause in the everyday. Thoughtful flavours, generous moments, and something wonderful waiting at the table.</p>
             <div className="lux-hero-actions lux-hero-reveal">
               <button type="button" className="lux-button lux-button-light" onClick={() => goToSection('explore-menu')}>Explore the menu <span aria-hidden="true">↓</span></button>
-              <button type="button" className="lux-button lux-button-outline" onClick={() => publicApi.showPage('customer-orders')}>View my orders <span aria-hidden="true">↗</span></button>
+              <button type="button" className="lux-button lux-button-outline" onClick={() => publicApi.showPage('customer-orders')}>View my orders</button>
               <span className="lux-hero-note">Prepared fresh. Served with care.</span>
             </div>
           </div>
@@ -169,16 +202,11 @@ function HomePage() {
           <a className="lux-scroll-cue" href="#explore-menu" aria-label="Scroll to explore the menu"><span /></a>
         </section>
 
-        <section className="lux-intro" id="kitchen-story">
+        <section className="lux-intro lux-intro-single" id="kitchen-story">
           <Reveal className="lux-intro-copy">
             <p className="lux-eyebrow">The pleasure is in the details</p>
             <h2>Made with intention.<br /><em>Remembered for the feeling.</em></h2>
             <p>At DineDesk, the smallest details make the biggest difference. We bring a considered touch to every plate, with ingredients selected for their freshness and flavours made to be enjoyed slowly.</p>
-            <button type="button" className="lux-inline-link" onClick={() => goToSection('explore-menu')}>Discover what’s on the table <span>↗</span></button>
-          </Reveal>
-          <Reveal className="lux-intro-image" delay={120}>
-            <img src="https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=1400&q=90" alt="A richly spiced South African curry served to share" loading="lazy" />
-            <span className="lux-image-caption">A fresh perspective on familiar flavours</span>
           </Reveal>
         </section>
 
@@ -191,7 +219,7 @@ function HomePage() {
             <div className="lux-category-list" role="group" aria-label="Filter menu by category">
               {categories.map((value) => <button type="button" key={value} className={category === value ? 'selected' : ''} onClick={() => setCategory(value)}>{value}</button>)}
             </div>
-            <button type="button" className="lux-button lux-button-dark" onClick={() => publicApi.showPage('orders')}>Order from the kitchen <span aria-hidden="true">↗</span></button>
+            <button type="button" className="lux-button lux-button-dark" onClick={() => publicApi.showPage('orders')}>Order from the kitchen</button>
           </div>
           <div className="lux-food-grid">
             {visibleItems.length
@@ -200,12 +228,12 @@ function HomePage() {
           </div>
           <div className="lux-kitchen-cta">
             <div><p className="lux-eyebrow">Ready when you are</p><h3>Let us set the table.</h3></div>
-            <button type="button" className="lux-button lux-button-light" onClick={() => publicApi.showPage('orders')}>Order from the kitchen <span aria-hidden="true">↗</span></button>
+            <button type="button" className="lux-button lux-button-light" onClick={() => publicApi.showPage('orders')}>Order from the kitchen</button>
           </div>
         </section>
       </main>
 
-      <footer className="lux-footer"><span className="lux-footer-wordmark" aria-label="DineDesk"><BrandMark />DineDesk</span><span>Thoughtful dining, made easy.</span><button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Back to the top ↑</button><MenuPhotoCredits items={menuItems} /></footer>
+      <RestaurantFooter />
     </div>
   );
 }
@@ -254,9 +282,9 @@ function KitchenPage() {
   return (
     <div className="lux-site kitchen-site">
       <nav className="lux-nav kitchen-nav">
-        <button type="button" className="lux-wordmark kitchen-wordmark" onClick={() => publicApi.showPage('login')} aria-label="DineDesk staff login"><BrandMark /><span>DineDesk</span><small>THE KITCHEN</small></button>
+        <button type="button" className="lux-wordmark kitchen-wordmark" onClick={() => publicApi.showPage('login')} aria-label="DineDesk staff login"><BrandMark /><span>DineDesk</span><small>KITCHEN</small></button>
         <div className="lux-kitchen-nav-note"><span className="lux-open-dot" /> Made fresh to order</div>
-        <button type="button" className="lux-kitchen-explore" onClick={() => publicApi.returnHome()}>Back to home <span aria-hidden="true">↗</span></button>
+        <button type="button" className="lux-kitchen-explore" onClick={() => publicApi.returnHome()} aria-label="Back to home" title="Back to home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10.5 9-7.5 9 7.5M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg></button>
       </nav>
       <header className="kitchen-hero">
         <div className="kitchen-hero-image" />
@@ -294,17 +322,17 @@ function KitchenPage() {
               <strong className="kitchen-cart-item-total">R{(Number(item.price) * item.quantity).toFixed(2)}</strong>
             </article>)}
             <button type="button" className="kitchen-clear" onClick={() => publicApi.clearCart()}>Clear selection</button>
-          </div> : <div className="kitchen-empty"><span>✳</span><p>Your table is waiting.</p><small>Add something lovely from the menu.</small></div>}
+          </div> : <div className="kitchen-empty"><img src={cartBrandMark} alt="DineDesk" /><span>Your order will appear here.</span></div>}
           <div className="kitchen-cart-total"><span>Your total</span><strong>R{total.toFixed(2)}</strong></div>
-          <div className="kitchen-choice"><label htmlFor="customer-email">Email for order history</label><input id="customer-email" type="email" autoComplete="email" maxLength={254} required value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} placeholder="you@example.com" /></div>
+          <div className="kitchen-choice"><label htmlFor="customer-email">Email for order history (optional)</label><input id="customer-email" type="email" autoComplete="email" maxLength={254} value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} placeholder="you@example.com" /></div>
           <div className="kitchen-choice"><label htmlFor="order-type">How would you like it?</label><select id="order-type" value={orderType} onChange={(event) => setOrderType(event.target.value)}><option value="Dine in">Dine in</option><option value="Takeaway">Takeaway</option></select><p id="order-type-error" className="order-type-error" role="alert" /></div>
           {orderType === 'Dine in' && <div className="kitchen-choice"><label htmlFor="table-number">Choose your table</label><select id="table-number" value={selectedTable} onChange={(event) => setSelectedTable(event.target.value)}><option value="">Select an available table</option>{availableTables.map((table) => <option value={table} key={table}>Table {table}</option>)}</select><p className="order-type-error" role="alert">{tableError}</p></div>}
           <div className="kitchen-choice"><label htmlFor="payment-method">Payment preference</label><select id="payment-method" defaultValue={publicApi.getPaymentMethod()} onChange={(event) => publicApi.setPaymentMethod(event.target.value)}><option value="cash">Cash — pay your waiter</option><option value="card">Card — pay your waiter</option><option value="online">Pay securely online with Paystack</option></select></div>
-          <button type="button" className="lux-button lux-button-dark kitchen-checkout" onClick={() => publicApi.placeOrder(customerEmail)}>Place your order <span aria-hidden="true">↗</span></button>
+          <button type="button" className="lux-button lux-button-dark kitchen-checkout" onClick={() => publicApi.placeOrder(customerEmail)}>Place your order</button>
           <p className="kitchen-cart-footnote">Prepared with care, and sent straight to our kitchen.</p>
         </aside>
       </main>
-      <footer className="lux-footer"><span className="lux-footer-wordmark" aria-label="DineDesk"><BrandMark />DineDesk</span><span>Thank you for joining us.</span><span className="kitchen-footer-note">THE KITCHEN · FRESHLY PREPARED</span><MenuPhotoCredits items={menuItems} /></footer>
+      <RestaurantFooter kitchen />
     </div>
   );
 }

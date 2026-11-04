@@ -326,7 +326,7 @@ def load_signature_menu_from_csv():
     return items
 
 
-def initialise_database(seed_menu=True):
+def initialise_database(seed_menu=False):
     with get_connection() as connection:
         connection.execute(
             """
@@ -669,6 +669,9 @@ def initialise_database(seed_menu=True):
                 "The orders database still uses the legacy bill-plan column. "
                 "Stop the backend and run Backend/migrations/migrate_payment_method.py."
             )
+        complaint_viewed_column_missing = (
+            "manager_viewed_at" not in get_table_columns(connection, "complaints")
+        )
         for table, column in [
             ("users", "is_active INTEGER NOT NULL DEFAULT 1"),
             ("menu_items", "image TEXT"),
@@ -683,6 +686,8 @@ def initialise_database(seed_menu=True):
             ("orders", "payment_status TEXT NOT NULL DEFAULT 'unpaid'"),
             ("orders", "payment_reference TEXT"),
             ("orders", "rating INTEGER"),
+            ("orders", "served_at TEXT"),
+            ("orders", "cancellation_reason TEXT"),
             ("complaints", "order_id INTEGER"),
             ("complaints", "order_number TEXT"),
             ("complaints", "category TEXT"),
@@ -713,11 +718,16 @@ def initialise_database(seed_menu=True):
             ("complaints", "ml_suggested_response TEXT"),
             ("complaints", "ml_first_response_accepted INTEGER"),
             ("complaints", "ml_first_response_at TEXT"),
+            ("complaints", "manager_viewed_at TEXT"),
         ]:
             column_name = column.split(maxsplit=1)[0]
             existing_columns = get_table_columns(connection, table)
             if column_name not in existing_columns:
                 connection.execute(f"ALTER TABLE {table} ADD COLUMN {column}")
+        if complaint_viewed_column_missing:
+            connection.execute(
+                "UPDATE complaints SET manager_viewed_at = COALESCE(updated_at, created_at)"
+            )
         training_columns = get_table_columns(
             connection,
             "complaint_training_examples",
@@ -869,6 +879,8 @@ def public_order(row):
         "status": order["status"],
         "created_at": order["created_at"],
         "updated_at": order["updated_at"],
+        "served_at": order.get("served_at"),
+        "cancellation_reason": order.get("cancellation_reason"),
         "order_type": order["order_type"],
         "payment_method": (
             "online"
@@ -2634,8 +2646,6 @@ def create_order():
     customer_name = customer_name or "Guest customer"
     supplied_email = payload.get("customer_email")
     customer_email = supplied_email.strip().lower() if isinstance(supplied_email, str) else ""
-    if not customer_email:
-        return jsonify({"error": "Enter an email address so you can access your order history"}), 400
     order_type = str(payload.get("order_type", "Dine in")).strip()
     payment_method_value = payload.get("payment_method", "cash")
     if not isinstance(payment_method_value, str):
@@ -2643,6 +2653,10 @@ def create_order():
     payment_method = payment_method_value.strip().lower()
     if payment_method not in {"cash", "card", "online"}:
         return jsonify({"error": "Choose cash, card, or online as the payment method"}), 400
+    if payment_method == "online" and not customer_email:
+        return jsonify({
+            "error": "Enter an email address for online payment, or choose cash or card."
+        }), 400
     if payment_method == "online" and not paystack_is_configured():
         return jsonify({
             "error": "Online payment is not configured. Please choose cash or card."
@@ -2652,7 +2666,7 @@ def create_order():
 
     if len(customer_name) > 160:
         return jsonify({"error": "Customer names must be 160 characters or fewer"}), 400
-    if len(customer_email) > 254 or not EMAIL_PATTERN.fullmatch(customer_email):
+    if customer_email and (len(customer_email) > 254 or not EMAIL_PATTERN.fullmatch(customer_email)):
         return jsonify({"error": "Enter a valid email address"}), 400
     if not isinstance(items, list) or not 1 <= len(items) <= 50:
         return jsonify({"error": "At least one item is required"}), 400
@@ -2743,7 +2757,7 @@ def create_order():
             """,
             (
                 customer_name,
-                customer_email,
+                customer_email or "Not provided",
                 json.dumps(clean_items),
                 total,
                 initial_status,
@@ -2911,6 +2925,8 @@ def update_order(order_id):
     status = payload.get("status")
     if status not in VALID_ORDER_STATUSES:
         return jsonify({"error": "Choose a valid order status"}), 400
+    if status == "Cancelled":
+        return jsonify({"error": "Use the overdue-order cancellation action to cancel an order"}), 409
 
     timestamp = datetime.now(timezone.utc).isoformat()
     with get_connection() as connection:
@@ -2919,6 +2935,8 @@ def update_order(order_id):
         ).fetchone()
         if not current_order:
             return jsonify({"error": "Order not found"}), 404
+        if current_order["status"] == "Cancelled":
+            return jsonify({"error": "Cancelled orders cannot be changed"}), 409
         if status == "Served" and current_order["order_type"] != "Dine in":
             return jsonify({"error": "Only dine-in orders can be marked served"}), 400
         if status == "Completed" and current_order["order_type"] == "Dine in":
@@ -2943,13 +2961,27 @@ def update_order(order_id):
             """
             UPDATE orders SET status = ?, updated_at = ?,
                 waiter_id = COALESCE(waiter_id, ?),
+                served_at = CASE
+                    WHEN ? = 'Served' AND status = 'Served' THEN served_at
+                    WHEN ? = 'Served' THEN ?
+                    ELSE NULL
+                END,
                 payment_status = CASE
                     WHEN ? = 'Paid' AND payment_provider != 'paystack' THEN 'paid'
                     ELSE payment_status
                 END
             WHERE id = ?
             """,
-            (status, timestamp, g.current_user["id"], status, order_id),
+            (
+                status,
+                timestamp,
+                g.current_user["id"],
+                status,
+                status,
+                timestamp,
+                status,
+                order_id,
+            ),
         )
         if cursor.rowcount == 0:
             return jsonify({"error": "Order not found"}), 404
@@ -2962,6 +2994,73 @@ def update_order(order_id):
             (order_id,),
         ).fetchone()
     return jsonify(public_order(order))
+
+
+@app.patch("/api/orders/<int:order_id>/cancel")
+@require_role("waiter", "manager")
+def cancel_overdue_order(order_id):
+    timestamp = datetime.now(timezone.utc)
+    cutoff = timestamp - timedelta(hours=2)
+    with get_connection() as connection:
+        connection.execute("BEGIN IMMEDIATE")
+        order = connection.execute(
+            "SELECT * FROM orders WHERE id = ?", (order_id,)
+        ).fetchone()
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+        if (
+            g.current_user["role"] == "waiter"
+            and order["waiter_id"] != g.current_user["id"]
+        ):
+            return jsonify({"error": "Only the assigned waiter can cancel this order"}), 403
+        if (
+            order["status"] != "Served"
+            or order["order_type"] != "Dine in"
+            or order["payment_provider"] != "in_person"
+            or order["payment_status"] != "unpaid"
+        ):
+            return jsonify(
+                {"error": "Only unpaid, in-person dine-in orders can be cancelled"}
+            ), 409
+        try:
+            served_at = datetime.fromisoformat(
+                str(order["served_at"]).replace("Z", "+00:00")
+            )
+            if served_at.tzinfo is None:
+                served_at = served_at.replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            return jsonify(
+                {"error": "This order does not have a recorded served time"}
+            ), 409
+        if served_at > cutoff:
+            return jsonify(
+                {"error": "An order can only be cancelled after it has been served for two hours"}
+            ), 409
+        cursor = connection.execute(
+            """
+            UPDATE orders
+            SET status = 'Cancelled', cancellation_reason = ?,
+                updated_at = ?, served_at = NULL
+            WHERE id = ? AND status = 'Served' AND order_type = 'Dine in'
+              AND payment_provider = 'in_person' AND payment_status = 'unpaid'
+              AND served_at <= ?
+              AND (? = 'manager' OR waiter_id = ?)
+            """,
+            (
+                "Served for over two hours without collection",
+                timestamp.isoformat(),
+                order_id,
+                cutoff.isoformat(),
+                g.current_user["role"],
+                g.current_user["id"],
+            ),
+        )
+        if cursor.rowcount == 0:
+            return jsonify({"error": "The order is no longer eligible for cancellation"}), 409
+        cancelled_order = connection.execute(
+            "SELECT * FROM orders WHERE id = ?", (order_id,)
+        ).fetchone()
+    return jsonify(public_order(cancelled_order))
 
 
 @app.patch("/api/orders/<int:order_id>/claim")
@@ -3415,8 +3514,35 @@ def rate_complaint_solution():
 def list_pantry_items():
     with get_connection() as connection:
         rows = connection.execute("SELECT * FROM pantry_items ORDER BY name COLLATE NOCASE").fetchall()
+        today = datetime.now(SOUTH_AFRICA_TIMEZONE).date()
+        week_start = today - timedelta(days=6)
+        usage_rows = connection.execute(
+            """
+            SELECT item_id,
+                   SUM(CASE WHEN movement_date = ? THEN -quantity_change ELSE 0 END) AS used_today,
+                   SUM(-quantity_change) AS used_last_seven_days
+            FROM stock_movements
+            WHERE reason = 'Usage' AND movement_date >= ? AND movement_date <= ?
+            GROUP BY item_id
+            """,
+            (today.isoformat(), week_start.isoformat(), today.isoformat()),
+        ).fetchall()
+    usage_by_item = {row["item_id"]: row for row in usage_rows}
     items = [pantry_item_to_dict(row) for row in rows]
-    today = datetime.now(timezone.utc).date()
+    for item in items:
+        usage = usage_by_item.get(item["id"])
+        used_today = float(usage["used_today"] or 0) if usage else 0
+        used_last_seven_days = (
+            float(usage["used_last_seven_days"] or 0) if usage else 0
+        )
+        average_daily_usage = used_last_seven_days / 7
+        item["used_today"] = used_today
+        item["average_daily_usage"] = average_daily_usage
+        item["days_until_reorder"] = (
+            max(0, item["quantity"] - item["reorder_level"]) / average_daily_usage
+            if average_daily_usage > 0
+            else None
+        )
     return jsonify({
         "items": items,
         "summary": {
@@ -3661,6 +3787,10 @@ def adjust_pantry_item(item_id):
             ).date().isoformat()
         except ValueError:
             raise ValueError("Movement date must be a valid date") from None
+        if datetime.strptime(movement_date, "%Y-%m-%d").date() > datetime.now(
+            SOUTH_AFRICA_TIMEZONE
+        ).date():
+            raise ValueError("Movement date cannot be in the future")
     except ValueError as error:
         return jsonify({"error": str(error) or "Enter a valid adjustment date"}), 400
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -3714,6 +3844,37 @@ def list_complaints():
         complaints = connection.execute(query, parameters).fetchall()
 
     return jsonify([complaint_to_dict(complaint) for complaint in complaints])
+
+
+@app.get("/api/manager/complaints/unread-count")
+@require_role("manager")
+def count_unread_complaints():
+    with get_connection() as connection:
+        count = connection.execute(
+            "SELECT COUNT(*) FROM complaints WHERE manager_viewed_at IS NULL"
+        ).fetchone()[0]
+    return jsonify({"count": count})
+
+
+@app.post("/api/complaints/<int:complaint_id>/open")
+@require_role("manager")
+def open_complaint(complaint_id):
+    timestamp = datetime.now(timezone.utc).isoformat()
+    with get_connection() as connection:
+        cursor = connection.execute(
+            """
+            UPDATE complaints
+            SET manager_viewed_at = COALESCE(manager_viewed_at, ?)
+            WHERE id = ?
+            """,
+            (timestamp, complaint_id),
+        )
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Complaint not found"}), 404
+        complaint = connection.execute(
+            "SELECT * FROM complaints WHERE id = ?", (complaint_id,)
+        ).fetchone()
+    return jsonify(complaint_to_dict(complaint))
 
 
 def complaint_ml_is_enabled(connection):

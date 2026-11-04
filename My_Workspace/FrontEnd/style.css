@@ -961,15 +961,26 @@
     }
 
     #page-login .login-home-button {
+      display: grid;
+      width: 42px;
+      padding: 0;
+      place-items: center;
       min-height: 42px;
-      padding: 0 15px;
       border: 1px solid rgba(36, 33, 28, .25);
-      border-radius: 3px;
+      border-radius: 50%;
       background: transparent;
       color: #27272b;
-      font-size: 11px;
-      letter-spacing: .2px;
       transition: border-color .2s ease, background .2s ease;
+    }
+
+    #page-login .login-home-button svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.7;
     }
 
     #page-login .form-wrapper { position: relative; z-index: 1; }
@@ -1051,198 +1062,6 @@
     #page-login .form-footer span {
       color: var(--gold);
       text-decoration: none;
-    }
-
-    #page-register .form-page {
-      position: relative;
-      overflow: hidden;
-      background: #f8f6f1;
-    }
-
-    #page-register .form-page::before,
-    #page-register .form-page::after {
-      position: absolute;
-      width: 360px;
-      height: 360px;
-      border: 1px solid rgba(201, 168, 76, .2);
-      border-radius: 50%;
-      content: '';
-      pointer-events: none;
-    }
-
-    #page-register .form-page::before {
-      top: 16%;
-      left: -200px;
-      box-shadow: 0 0 0 22px rgba(201, 168, 76, .03), 0 0 0 52px rgba(201, 168, 76, .02);
-    }
-
-    #page-register .form-page::after {
-      right: -230px;
-      bottom: 4%;
-      box-shadow: 0 0 0 22px rgba(201, 168, 76, .03), 0 0 0 52px rgba(201, 168, 76, .02);
-    }
-
-    #page-register nav {
-      position: relative;
-      height: 84px;
-      padding: 0 clamp(22px, 6vw, 96px);
-      border-bottom: 1px solid rgba(36, 33, 28, .08);
-      background: rgba(248, 246, 241, .96);
-      backdrop-filter: blur(18px);
-    }
-
-    #page-register .nav-logo {
-      color: #24211c;
-      font-size: 23px;
-      text-shadow: none;
-    }
-
-    #page-register .nav-links { gap: 12px; }
-
-    #page-register .register-home-button,
-    #page-register .register-signin-button {
-      min-height: 42px;
-      padding: 0 16px;
-      border: 1px solid rgba(36, 33, 28, .22);
-      border-radius: 2px;
-      color: #24211c;
-      background: transparent;
-      font-size: 11px;
-      letter-spacing: .2px;
-    }
-
-    #page-register .register-home-button:hover,
-    #page-register .register-signin-button:hover {
-      border-color: var(--gold);
-      color: #24211c;
-      background: rgba(201, 168, 76, .08);
-    }
-
-    #page-register .form-wrapper {
-      position: relative;
-      z-index: 1;
-      align-items: flex-start;
-      padding: clamp(32px, 6vh, 64px) 20px 56px;
-    }
-
-    #page-register .register-luxury-card {
-      max-width: 560px;
-      padding: clamp(30px, 5vw, 48px);
-      border: 1px solid rgba(201, 168, 76, .42);
-      border-radius: 3px;
-      background: #fffefa;
-      box-shadow: 0 32px 100px rgba(0, 0, 0, .13), 0 3px 0 rgba(201, 168, 76, .12);
-    }
-
-    #page-register .register-luxury-card::before {
-      width: 38px;
-      height: 2px;
-      margin-bottom: 20px;
-      content: '';
-      background: var(--gold);
-      opacity: 1;
-    }
-
-    #page-register .register-eyebrow {
-      margin-bottom: 10px;
-      color: #a58341;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.8px;
-      text-transform: uppercase;
-    }
-
-    #page-register .register-luxury-card h2 {
-      margin-bottom: 8px;
-      color: #24211c;
-      font-size: clamp(30px, 5vw, 38px);
-      font-weight: 400;
-      letter-spacing: -.5px;
-    }
-
-    #page-register .register-luxury-card p.form-sub {
-      max-width: 440px;
-      margin-bottom: 28px;
-      color: #777168;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    #page-register .register-luxury-card .form-group { margin-bottom: 16px; }
-
-    #page-register .register-luxury-card .form-group label {
-      margin-bottom: 7px;
-      color: #3e4333;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .35px;
-    }
-
-    #page-register .register-luxury-card .form-group input,
-    #page-register .register-luxury-card .form-group select {
-      min-height: 46px;
-      padding: 11px 13px;
-      border: 1px solid rgba(36, 33, 28, .17);
-      border-radius: 2px;
-      color: #24211c;
-      background: #faf9f5;
-      font-size: 13px;
-      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
-    }
-
-    #page-register .register-luxury-card .form-group input:focus,
-    #page-register .register-luxury-card .form-group select:focus {
-      border-color: var(--gold);
-      outline: 2px solid rgba(201, 168, 76, .18);
-      background: #fffefa;
-      box-shadow: none;
-    }
-
-    #page-register .register-field-help {
-      display: block;
-      margin-top: 7px;
-      color: #777168;
-      font-size: 10px;
-      line-height: 1.5;
-    }
-
-    #page-register .register-luxury-card .form-submit {
-      min-height: 50px;
-      margin-top: 6px;
-      border: 1px solid #3e4333;
-      border-radius: 2px;
-      color: #fffefa;
-      background: #3e4333;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .7px;
-      text-transform: uppercase;
-      transition: transform .2s ease, background .2s ease, border-color .2s ease;
-    }
-
-    #page-register .register-luxury-card .form-submit:hover {
-      transform: translateY(-1px);
-      border-color: #24211c;
-      background: #24211c;
-    }
-
-    #page-register .form-footer {
-      margin-top: 24px;
-      color: #777168;
-      font-size: 12px;
-      text-align: center;
-    }
-
-    #page-register .form-footer button {
-      padding: 0;
-      border: 0;
-      color: #a58341;
-      background: transparent;
-      font: inherit;
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-      cursor: pointer;
     }
 
     /* Gold dot accent above the form heading */
@@ -1745,6 +1564,7 @@
     .manager-list-item small { font-size: 11px; }
     .manager-list-item > strong { color: var(--navy); white-space: nowrap; }
     .manager-complaint-item { display: block; }
+    .manager-complaint-item.is-sent { padding-left: 10px; border-left: 4px solid #15803d; }
     .manager-complaint-item p { margin-top: 8px; line-height: 1.5; }
     .manager-empty, .manager-loading, .manager-error { padding: 14px 0; color: var(--grey); font-size: 13px; }
     .manager-error { color: var(--danger); }
@@ -1803,8 +1623,19 @@
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .manager-complaints-list { gap: 12px; }
     .manager-complaint-card { gap: 12px; padding: 17px; border: 1px solid #e6eaed; border-radius: 8px; background: #fff; }
+    .manager-complaint-card.is-unread { border-left: 4px solid var(--danger); }
+    .manager-complaint-card.is-sent { border-left: 4px solid #15803d; }
     .manager-complaint-card:last-child { border-bottom: 1px solid #e6eaed; }
     .manager-complaint-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .manager-complaint-card > summary { cursor: pointer; list-style: none; }
+    .manager-complaint-card > summary::-webkit-details-marker { display: none; }
+    .manager-complaint-read-status { justify-self: start; padding: 4px 8px; border-radius: 999px; font-size: 10px !important; font-weight: 700; }
+    .manager-complaint-card .manager-complaint-read-status.unread,
+    .manager-complaint-item .manager-complaint-read-status.unread { background: #fef2f2; color: #b91c1c !important; }
+    .manager-complaint-card .manager-complaint-read-status.opened,
+    .manager-complaint-item .manager-complaint-read-status.opened { background: #eaf1f5; color: #356b83 !important; }
+    .manager-complaint-card .manager-complaint-read-status.sent,
+    .manager-complaint-item .manager-complaint-read-status.sent { background: #e8f7ec; color: #166534 !important; }
     .manager-complaint-title { display: grid; gap: 4px; }
     .manager-complaint-title > strong { color: var(--navy); font-size: 15px; }
     .manager-complaint-card .manager-complaint-category { color: var(--grey); font-size: 12px; }
@@ -1896,13 +1727,20 @@
       .manager-advanced-insights > summary small { line-height: 1.4; }
     }
     .order-confirmation-page { min-height: 100vh; background: #f8f6f1; }
-    .order-confirmation-content { width: min(100% - 32px, 600px); margin: 0 auto; padding: 76px 0 60px; text-align: center; }
+    .order-confirmation-content { position: relative; width: min(100% - 32px, 600px); margin: 0 auto; padding: 24px 0 60px; text-align: center; }
+    .confirmation-topbar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+    .order-confirmation-content .confirmation-home-button { display: grid; width: 42px; height: 42px; margin: 0; padding: 0; place-items: center; border: 1px solid rgba(36, 33, 28, .25); border-radius: 50%; color: #24211c; background: transparent; cursor: pointer; }
+    .confirmation-home-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+    .order-confirmation-content .confirmation-home-button:hover { border-color: #24211c; background: rgba(36, 33, 28, .06); }
     .order-confirmation-content .menu-eyebrow { justify-content: center; color: #545943; font-size: 9px; letter-spacing: 2px; }
     .order-confirmation-content h1 { margin: 0 0 10px; color: #24211c; font-family: 'Playfair Display', serif; font-size: clamp(38px, 7vw, 58px); font-weight: 400; }
     .order-confirmation-content .confirmation-order-history { margin: 26px 0; padding: 24px; border: 1px solid rgba(36, 33, 28, .14); border-top: 2px solid #c0a575; background: #fffefa; text-align: left; }
     .confirmation-order-history h2 { margin: 0 0 8px; color: #24211c; font-family: 'Playfair Display', serif; font-size: 27px; font-weight: 400; }
     .confirmation-order-history > p:not(.menu-eyebrow) { color: #777168; font-size: 12px; }
     .customer-order-history-card { margin: 14px 0; padding: 18px; border: 1px solid rgba(36, 33, 28, .12); background: #fffefa; text-align: left; }
+    .confirmation-order-history-entry[hidden] { display: none; }
+    .confirmation-order-history-more { display: block; margin: 12px 0 18px; padding: 8px 0; border: 0; border-bottom: 1px solid #c0a575; color: #3e4333; background: transparent; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .confirmation-order-history-more[hidden] { display: none; }
     .customer-order-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .customer-order-history-heading .menu-eyebrow { justify-content: flex-start; margin: 0 0 3px; }
     .customer-order-history-heading h2 { margin: 0; color: #24211c; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; }
@@ -1915,8 +1753,12 @@
     .customer-history-error, .customer-order-history-message { color: #9c3d31; font-size: 12px; }
     .customer-order-history-empty { padding: 18px; color: #777168; background: #fffefa; font-size: 13px; }
     .customer-orders-page { min-height: 100vh; background: #f8f6f1; }
-    .customer-orders-content { width: min(calc(100% - 32px), 780px); margin: 0 auto; padding: 64px 0; color: #24211c; font-family: 'Inter', sans-serif; }
-    .customer-orders-content > .menu-eyebrow { color: #545943; font-size: 9px; letter-spacing: 2px; }
+    .customer-orders-content { width: min(calc(100% - 32px), 780px); margin: 0 auto; padding: 32px 0 64px; color: #24211c; font-family: 'Inter', sans-serif; }
+    .customer-orders-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .customer-orders-header .menu-eyebrow { margin: 0; color: #545943; font-size: 9px; letter-spacing: 2px; }
+    .customer-orders-home { display: grid; width: 42px; height: 42px; flex: 0 0 auto; padding: 0; place-items: center; border: 1px solid rgba(36, 33, 28, .25); border-radius: 50%; color: #24211c; background: transparent; cursor: pointer; }
+    .customer-orders-home svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+    .customer-orders-home:hover { border-color: #24211c; background: #efede6; }
     .customer-orders-content > h1 { margin: 0 0 10px; font-family: 'Playfair Display', serif; font-size: clamp(38px, 7vw, 58px); font-weight: 400; }
     .customer-orders-content > h1 em { color: #545943; }
     .customer-orders-content > p:not(.menu-eyebrow) { color: #777168; font-size: 14px; }
@@ -1931,7 +1773,7 @@
     .customer-orders-content .btn-secondary { min-height: 42px; padding: 9px 16px; border: 1px solid rgba(36, 33, 28, .25); border-radius: 2px; color: #3e4333; background: transparent; font: inherit; font-size: 11px; }
     .customer-orders-content .lux-button-outline { color: #24211c; border-color: rgba(36, 33, 28, .25); background: transparent; }
     .customer-orders-content .lux-button-outline:hover { background: #efede6; }
-    .customer-orders-back { margin-top: 16px; }
+    #customer-order-history-signout { margin-top: 16px; }
     .confirmation-lead, .order-confirmation-content > p:not(.menu-eyebrow) { color: #777168; font-size: 14px; }
     .confirmation-facts { display: grid; gap: 11px; margin: 30px 0 22px; padding: 26px; border: 1px solid rgba(36, 33, 28, .14); border-top: 2px solid #c0a575; background: #fffefa; box-shadow: 0 18px 55px rgba(36, 33, 28, .07); text-align: left; }
     .confirmation-facts strong { color: #24211c; font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 400; }
@@ -2809,6 +2651,11 @@
       color: #3e4333;
       background: #edf0e8;
     }
+    .staff-row-action.danger {
+      border-color: #b42318;
+      color: #fff;
+      background: #b42318;
+    }
     .staff-status-pill {
       display: inline-block;
       padding: 4px 8px;
@@ -3085,16 +2932,6 @@
       #page-login .nav-links { gap: 0; }
     }
 
-    @media (max-width: 600px) {
-      #page-register nav { height: 72px; padding: 0 16px; }
-      #page-register .nav-logo { gap: 7px; font-size: 19px; }
-      #page-register .nav-links { gap: 7px; }
-      #page-register .register-home-button,
-      #page-register .register-signin-button { min-height: 38px; padding: 0 10px; font-size: 10px; }
-      #page-register .form-wrapper { padding: 30px 14px 40px; }
-      #page-register .register-luxury-card { padding: 30px 22px; }
-    }
-
     .order-confirmation-content .confirmation-complaint-button {
       display: block;
       width: min(100%, 420px);
@@ -3302,4 +3139,246 @@
     .order-confirmation-content .confirmation-actions > .btn-secondary:focus-visible {
       outline: 3px solid rgba(192, 165, 117, .55);
       outline-offset: 3px;
+    }
+
+    #page-login .form-page {
+      overflow-x: hidden;
+      overflow-y: auto;
+      background: #f7f5ef;
+    }
+
+    #page-login .form-page::before,
+    #page-login .form-page::after {
+      display: block;
+      border-color: rgba(192, 165, 117, .2);
+    }
+
+    #page-login nav {
+      position: relative;
+      z-index: 1;
+      border-color: rgba(36, 33, 28, .08);
+      background: rgba(248, 246, 241, .82);
+      backdrop-filter: blur(18px);
+    }
+
+    #page-login .nav-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    #page-login .login-portal-brand {
+      display: grid;
+      gap: 2px;
+      color: #27272b;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      line-height: 1;
+      text-align: left;
+    }
+
+    #page-login .login-portal-brand small {
+      color: #8b6a33;
+      font-family: 'Inter', sans-serif;
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 1.7px;
+    }
+
+    #page-login .login-home-button {
+      color: #27272b;
+      border-color: rgba(36, 33, 28, .25);
+    }
+
+    #page-login .login-home-button:hover {
+      border-color: #27272b;
+      color: #27272b;
+      background: rgba(39, 39, 43, .06);
+    }
+
+    #page-login .form-wrapper {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: center;
+      justify-items: center;
+      overflow: hidden;
+      padding: 40px 20px;
+    }
+
+    #page-login .login-luxury-card,
+    #page-login .register-luxury-card {
+      grid-area: 1 / 1;
+      width: 100%;
+      border: 1px solid rgba(36, 33, 28, .12);
+      border-radius: 12px;
+      color: #24211c;
+      background: rgba(255, 254, 250, .72);
+      box-shadow: 0 24px 70px rgba(36, 33, 28, .14);
+      -webkit-backdrop-filter: blur(22px);
+      backdrop-filter: blur(22px);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(30px);
+      transition: opacity .5s cubic-bezier(.2, .7, .2, 1), transform .5s cubic-bezier(.2, .7, .2, 1), visibility .5s;
+      pointer-events: none;
+    }
+
+    #page-login .login-luxury-card.auth-card-active,
+    #page-login .register-luxury-card.auth-card-active {
+      z-index: 1;
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+      animation: auth-card-fade-up .5s cubic-bezier(.2, .7, .2, 1) both;
+    }
+
+    @keyframes auth-card-fade-up {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #page-login .login-luxury-card::before,
+    #page-login .register-luxury-card::before {
+      display: block;
+      width: 38px;
+      height: 2px;
+      margin-bottom: 22px;
+      content: '';
+      background: #c0a575;
+      opacity: 1;
+    }
+
+    #page-login .login-luxury-card h2,
+    #page-login .register-luxury-card h2 {
+      color: #24211c;
+    }
+
+    #page-login .login-luxury-card p.form-sub,
+    #page-login .register-luxury-card p.form-sub {
+      color: #625e56;
+    }
+
+    #page-login .login-luxury-card .form-group label,
+    #page-login .register-luxury-card .form-group label {
+      color: #3e4333;
+    }
+
+    #page-login .login-luxury-card .form-group input,
+    #page-login .register-luxury-card .form-group input,
+    #page-login .register-luxury-card .form-group select {
+      border-color: rgba(36, 33, 28, .2);
+      color: #24211c;
+      background: rgba(255, 255, 255, .94);
+    }
+
+    #page-login .login-luxury-card .form-group input:focus,
+    #page-login .register-luxury-card .form-group input:focus,
+    #page-login .register-luxury-card .form-group select:focus {
+      border-color: #c0a575;
+      background: #fffefa;
+    }
+
+    #page-login .login-luxury-card .form-submit,
+    #page-login .register-luxury-card .form-submit {
+      border-radius: 7px;
+      background: #545943;
+    }
+
+    #page-login .login-luxury-card .form-submit:hover,
+    #page-login .register-luxury-card .form-submit:hover {
+      background: #3e4333;
+    }
+
+    #page-login .login-luxury-card .login-eyebrow,
+    #page-login .register-luxury-card .register-eyebrow {
+      color: #8b6a33;
+      text-align: center;
+    }
+
+    #page-login .login-luxury-card .form-footer,
+    #page-login .register-luxury-card .form-footer {
+      color: #625e56;
+    }
+
+    #page-login .login-luxury-card .form-footer button,
+    #page-login .register-luxury-card .form-footer button {
+      padding: 0;
+      border: 0;
+      color: #755c2e;
+      background: transparent;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+
+    #page-login .register-luxury-card {
+      max-width: 560px;
+      padding: clamp(30px, 5vw, 48px);
+    }
+
+    #page-login .register-luxury-card h2 {
+      margin-bottom: 8px;
+      font-size: clamp(30px, 5vw, 38px);
+      font-weight: 400;
+      text-align: center;
+    }
+
+    #page-login .register-luxury-card p.form-sub {
+      max-width: 440px;
+      margin: 0 auto 28px;
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    #page-login .register-luxury-card .form-group {
+      margin-bottom: 16px;
+    }
+
+    #page-login .register-field-help {
+      display: block;
+      margin-top: 7px;
+      color: #625e56;
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    #page-login .register-luxury-card .form-submit {
+      min-height: 50px;
+      margin-top: 6px;
+      border: 1px solid #3e4333;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+    }
+
+    #page-login .form-wrapper.register-mode {
+      align-items: flex-start;
+      padding-top: 30px;
+      padding-bottom: 48px;
+    }
+
+    @media (max-width: 600px) {
+      #page-login .register-luxury-card {
+        padding: 30px 22px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #page-login .login-luxury-card,
+      #page-login .register-luxury-card {
+        transition-duration: .01ms;
+        animation-duration: .01ms;
+      }
     }

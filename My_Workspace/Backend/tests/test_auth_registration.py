@@ -5,6 +5,7 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -88,6 +89,15 @@ class StaffRegistrationInvitationKeyTests(unittest.TestCase):
         )
         self.request_counter = 0
         self.client = backend.app.test_client()
+
+    def test_database_initialization_does_not_seed_menu_items(self):
+        backend.initialise_database()
+        with backend.get_connection() as connection:
+            menu_count = connection.execute(
+                "SELECT COUNT(*) AS count FROM menu_items"
+            ).fetchone()["count"]
+
+        self.assertEqual(menu_count, 0)
 
     def tearDown(self):
         backend.DATABASE_PATH = self.original_values["database_path"]
@@ -299,6 +309,59 @@ class StaffRegistrationInvitationKeyTests(unittest.TestCase):
             count = connection.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
         self.assertEqual(count, 0)
 
+    def test_order_history_email_is_optional_for_in_person_orders(self):
+        self._create_public_menu_item()
+        self.request_counter += 1
+        response = self.client.post(
+            "/api/orders",
+            json={
+                "order_type": "Takeaway",
+                "payment_method": "cash",
+                "items": [{"name": "Test meal", "quantity": 1}],
+            },
+            environ_overrides={"REMOTE_ADDR": f"198.51.100.{self.request_counter}"},
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.get_json()["customer_email"], "Not provided")
+
+        self.request_counter += 1
+        history_response = self.client.post(
+            "/api/customer/order-history/request-code",
+            json={"email": "Not provided"},
+            environ_overrides={"REMOTE_ADDR": f"198.51.100.{self.request_counter}"},
+        )
+        self.assertEqual(history_response.status_code, 400)
+
+        self.request_counter += 1
+        identified_response = self.client.post(
+            "/api/orders",
+            json={
+                "customer_email": "customer@example.com",
+                "order_type": "Takeaway",
+                "payment_method": "cash",
+                "items": [{"name": "Test meal", "quantity": 1}],
+            },
+            environ_overrides={"REMOTE_ADDR": f"198.51.100.{self.request_counter}"},
+        )
+        self.assertEqual(identified_response.status_code, 201)
+        self.assertEqual(identified_response.get_json()["customer_email"], "customer@example.com")
+
+        self.request_counter += 1
+        online_response = self.client.post(
+            "/api/orders",
+            json={
+                "order_type": "Takeaway",
+                "payment_method": "online",
+                "items": [{"name": "Test meal", "quantity": 1}],
+            },
+            environ_overrides={"REMOTE_ADDR": f"198.51.100.{self.request_counter}"},
+        )
+        self.assertEqual(online_response.status_code, 400)
+        with backend.get_connection() as connection:
+            count = connection.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+        self.assertEqual(count, 2)
+
     def test_paystack_initialization_uses_server_price_and_callback(self):
         session_response = MagicMock()
         session_response.__enter__.return_value.read.return_value = json.dumps(
@@ -435,6 +498,247 @@ class StaffRegistrationInvitationKeyTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertFalse(backend.paystack_signature_is_valid(b"payload", "invalid"))
+
+    def _create_waiter(self, email):
+        with backend.get_connection() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO users
+                    (firstname, lastname, email, password_hash, role, created_at)
+                VALUES (?, ?, ?, ?, 'waiter', ?)
+                """,
+                ("Test", "Waiter", email, "unused-test-hash", datetime.now(timezone.utc).isoformat()),
+            )
+        waiter_id = cursor.lastrowid
+        token = backend.create_token(
+            {"id": waiter_id, "email": email, "role": "waiter"},
+            f"waiter-test-session-{waiter_id}",
+        )
+        return waiter_id, {"Authorization": f"Bearer {token}"}
+
+    def _create_served_order(
+        self,
+        waiter_id,
+        *,
+        served_hours_ago=3,
+        order_type="Dine in",
+        payment_status="unpaid",
+        payment_requested=0,
+    ):
+        now = datetime.now(timezone.utc)
+        served_at = (now - timedelta(hours=served_hours_ago)).isoformat()
+        with backend.get_connection() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO orders
+                    (customer_name, customer_email, items, total, status, created_at,
+                     updated_at, payment_method, payment_provider, payment_status,
+                     order_type, waiter_id, payment_requested, served_at)
+                VALUES (?, ?, ?, ?, 'Served', ?, ?, 'cash', 'in_person', ?, ?, ?, ?, ?)
+                """,
+                (
+                    "Test Customer",
+                    "customer@example.com",
+                    json.dumps([{"name": "Test meal", "quantity": 1, "price": 12.34}]),
+                    12.34,
+                    served_at,
+                    served_at,
+                    payment_status,
+                    order_type,
+                    waiter_id,
+                    payment_requested,
+                    served_at,
+                ),
+            )
+        return cursor.lastrowid
+
+    def test_waiter_cancellation_requires_overdue_unpaid_assigned_dine_in_order(self):
+        waiter_id, waiter_headers = self._create_waiter("assigned-waiter@example.com")
+        _, other_waiter_headers = self._create_waiter("other-waiter@example.com")
+
+        recent_order = self._create_served_order(waiter_id, served_hours_ago=1.5)
+        recent_response = self.client.patch(
+            f"/api/orders/{recent_order}/cancel", headers=waiter_headers
+        )
+        self.assertEqual(recent_response.status_code, 409)
+
+        assigned_order = self._create_served_order(waiter_id)
+        wrong_waiter_response = self.client.patch(
+            f"/api/orders/{assigned_order}/cancel", headers=other_waiter_headers
+        )
+        self.assertEqual(wrong_waiter_response.status_code, 403)
+
+        payment_requested_order = self._create_served_order(
+            waiter_id, payment_requested=1
+        )
+        payment_requested_response = self.client.patch(
+            f"/api/orders/{payment_requested_order}/cancel", headers=waiter_headers
+        )
+        self.assertEqual(payment_requested_response.status_code, 200)
+
+        paid_order = self._create_served_order(waiter_id, payment_status="paid")
+        paid_response = self.client.patch(
+            f"/api/orders/{paid_order}/cancel", headers=waiter_headers
+        )
+        self.assertEqual(paid_response.status_code, 409)
+
+        takeaway_order = self._create_served_order(waiter_id, order_type="Takeaway")
+        takeaway_response = self.client.patch(
+            f"/api/orders/{takeaway_order}/cancel", headers=waiter_headers
+        )
+        self.assertEqual(takeaway_response.status_code, 409)
+
+        generic_cancel_response = self.client.patch(
+            f"/api/orders/{assigned_order}",
+            headers=waiter_headers,
+            json={"status": "Cancelled"},
+        )
+        self.assertEqual(generic_cancel_response.status_code, 409)
+
+        cancelled_response = self.client.patch(
+            f"/api/orders/{assigned_order}/cancel", headers=waiter_headers
+        )
+        self.assertEqual(cancelled_response.status_code, 200)
+        self.assertEqual(cancelled_response.get_json()["status"], "Cancelled")
+        self.assertEqual(
+            cancelled_response.get_json()["cancellation_reason"],
+            "Served for over two hours without collection",
+        )
+        reopen_response = self.client.patch(
+            f"/api/orders/{assigned_order}",
+            headers=waiter_headers,
+            json={"status": "Received"},
+        )
+        self.assertEqual(reopen_response.status_code, 409)
+
+    def test_served_timestamp_is_set_when_order_transitions_to_served(self):
+        waiter_id, waiter_headers = self._create_waiter("served-waiter@example.com")
+        with backend.get_connection() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO orders
+                    (customer_name, customer_email, items, total, status, created_at,
+                     updated_at, payment_method, order_type, waiter_id)
+                VALUES (?, ?, ?, ?, 'Ready', ?, ?, 'cash', 'Dine in', ?)
+                """,
+                (
+                    "Test Customer",
+                    "customer@example.com",
+                    json.dumps([{"name": "Test meal", "quantity": 1, "price": 12.34}]),
+                    12.34,
+                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
+                    waiter_id,
+                ),
+            )
+        order_id = cursor.lastrowid
+
+        response = self.client.patch(
+            f"/api/orders/{order_id}",
+            headers=waiter_headers,
+            json={"status": "Served"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["served_at"])
+
+    def test_manager_complaint_count_decreases_when_complaint_is_opened(self):
+        timestamp = datetime.now(timezone.utc).isoformat()
+        with backend.get_connection() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO complaints
+                    (customer_name, customer_email, message, status, created_at, updated_at)
+                VALUES (?, ?, ?, 'Open', ?, ?)
+                """,
+                ("Test Customer", "customer@example.com", "Test complaint", timestamp, timestamp),
+            )
+        complaint_id = cursor.lastrowid
+        manager_headers = {"Authorization": f"Bearer {self.manager_token}"}
+
+        count_response = self.client.get(
+            "/api/manager/complaints/unread-count", headers=manager_headers
+        )
+        self.assertEqual(count_response.status_code, 200)
+        self.assertEqual(count_response.get_json()["count"], 1)
+
+        opened_response = self.client.post(
+            f"/api/complaints/{complaint_id}/open", headers=manager_headers
+        )
+        self.assertEqual(opened_response.status_code, 200)
+        viewed_at = opened_response.get_json()["manager_viewed_at"]
+        self.assertTrue(viewed_at)
+
+        repeated_open_response = self.client.post(
+            f"/api/complaints/{complaint_id}/open", headers=manager_headers
+        )
+        self.assertEqual(
+            repeated_open_response.get_json()["manager_viewed_at"], viewed_at
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/manager/complaints/unread-count", headers=manager_headers
+            ).get_json()["count"],
+            0,
+        )
+
+    def test_daily_usage_deducts_stock_and_exposes_reorder_forecast(self):
+        manager_headers = {"Authorization": f"Bearer {self.manager_token}"}
+        with backend.get_connection() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO pantry_items
+                    (name, category, quantity, unit, reorder_level, cost_per_unit, last_updated)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "Test rice",
+                    "Dry Goods",
+                    10,
+                    "kg",
+                    3,
+                    2.5,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+        item_id = cursor.lastrowid
+        usage_date = datetime.now(backend.SOUTH_AFRICA_TIMEZONE).date().isoformat()
+        future_date = (
+            datetime.now(backend.SOUTH_AFRICA_TIMEZONE).date() + timedelta(days=1)
+        ).isoformat()
+
+        future_usage_response = self.client.post(
+            f"/api/pantry/{item_id}/adjust",
+            headers=manager_headers,
+            json={"quantity": 1, "reason": "Usage", "date": future_date},
+        )
+        self.assertEqual(future_usage_response.status_code, 400)
+
+        usage_response = self.client.post(
+            f"/api/pantry/{item_id}/adjust",
+            headers=manager_headers,
+            json={"quantity": 4, "reason": "Usage", "date": usage_date},
+        )
+        self.assertEqual(usage_response.status_code, 200)
+        self.assertEqual(usage_response.get_json()["quantity"], 6)
+
+        pantry_response = self.client.get("/api/pantry", headers=manager_headers)
+        self.assertEqual(pantry_response.status_code, 200)
+        item = next(
+            item for item in pantry_response.get_json()["items"] if item["id"] == item_id
+        )
+        self.assertEqual(item["used_today"], 4)
+        self.assertAlmostEqual(item["average_daily_usage"], 4 / 7)
+        self.assertAlmostEqual(item["days_until_reorder"], 5.25)
+
+        with backend.get_connection() as connection:
+            movement = connection.execute(
+                "SELECT quantity_change, reason, movement_date FROM stock_movements WHERE item_id = ?",
+                (item_id,),
+            ).fetchone()
+        self.assertEqual(movement["quantity_change"], -4)
+        self.assertEqual(movement["reason"], "Usage")
+        self.assertEqual(movement["movement_date"], usage_date)
 
 
 if __name__ == "__main__":
