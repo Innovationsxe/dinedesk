@@ -59,13 +59,17 @@ function getCategories(items) {
   return ['All', ...new Set(items.map((item) => item.category).filter(Boolean))];
 }
 
-function FoodCard({ item, index = 0, compact = false }) {
+function FoodCard({ item, index = 0, compact = false, onImageClick }) {
   const image = publicApi.imageUrl(item);
   const price = Number(item.currentPrice ?? item.price);
   return (
     <Reveal className={`food-card${compact ? ' food-card-compact' : ''}`} delay={index * 70}>
       <div className="food-card-image">
-        <img src={image} alt={item.name} loading={index < 2 ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.src = fallbackImage; }} />
+        {onImageClick
+          ? <button type="button" className="food-card-image-trigger" onClick={(event) => onImageClick(item, event.currentTarget.querySelector('img')?.currentSrc || image)} aria-label={`View a larger photo of ${item.name}`}>
+              <img src={image} alt="" loading={index < 2 ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.src = fallbackImage; }} />
+            </button>
+          : <img src={image} alt={item.name} loading={index < 2 ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.src = fallbackImage; }} />}
         {item.discountPercent > 0 && <span className="food-card-tag">{item.discountPercent}% off</span>}
         {compact && <button type="button" className="food-card-add" onClick={() => publicApi.addToCart(item.name)} aria-label={`Add ${item.name} to your order`}>+</button>}
       </div>
@@ -75,6 +79,31 @@ function FoodCard({ item, index = 0, compact = false }) {
         <p>{item.description || 'Thoughtfully prepared with the finest ingredients.'}</p>
       </div>
     </Reveal>
+  );
+}
+
+function FoodImageDialog({ selection, onClose }) {
+  const dialogRef = useRef(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (selection && !dialog.open) dialog.showModal();
+    else if (!selection && dialog.open) dialog.close();
+  }, [selection]);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="food-image-dialog"
+      aria-label={selection ? `Photo of ${selection.item.name}` : undefined}
+      onClose={onClose}
+      onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}
+    >
+      {selection && <>
+        <button type="button" className="food-image-dialog-close" onClick={() => dialogRef.current.close()} aria-label="Close food photo">×</button>
+        <img src={selection.image} alt={selection.item.name} />
+        <p>{selection.item.name}</p>
+      </>}
+    </dialog>
   );
 }
 
@@ -141,6 +170,7 @@ function HomePage() {
   const menuItems = useMenuItems();
   const cartItems = useCartItems();
   const [category, setCategory] = useState('All');
+  const [selectedFoodImage, setSelectedFoodImage] = useState(null);
   const [activeSection, setActiveSection] = useState('menu');
   const [underline, setUnderline] = useState({ left: 0, width: 0 });
   const menuLink = useRef(null);
@@ -223,7 +253,12 @@ function HomePage() {
           </div>
           <div className="lux-food-grid">
             {visibleItems.length
-              ? visibleItems.map((item, index) => <FoodCard key={item.id || item.name} item={item} index={index} />)
+              ? visibleItems.map((item, index) => <FoodCard
+                  key={item.id || item.name}
+                  item={item}
+                  index={index}
+                  onImageClick={(selectedItem, image) => setSelectedFoodImage({ item: selectedItem, image })}
+                />)
               : <p className="lux-menu-empty">Our menu is being prepared. Please check back shortly.</p>}
           </div>
           <div className="lux-kitchen-cta">
@@ -234,6 +269,7 @@ function HomePage() {
       </main>
 
       <RestaurantFooter />
+      <FoodImageDialog selection={selectedFoodImage} onClose={() => setSelectedFoodImage(null)} />
     </div>
   );
 }

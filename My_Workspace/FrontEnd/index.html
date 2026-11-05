@@ -298,14 +298,14 @@
       <div><h4>Management suite</h4><p id="manager-welcome">Manage your team and restaurant</p></div>
     </div>
     <div class="staff-header-actions">
-      <button class="manager-action" id="manager-dashboard-refresh" type="button" onclick="refreshManagerDashboard()">Refresh</button>
+      <span id="manager-refresh-status" class="manager-auto-refresh-status" role="status" aria-live="polite"><i aria-hidden="true"></i> Updating automatically</span>
       <button class="logout-btn" type="button" onclick="handleLogout()">Sign out</button>
     </div>
   </div>
   <main class="manager-dashboard">
     <nav class="manager-tabs" aria-label="Manager sections">
       <button class="manager-tab active" type="button" data-manager-section="manager-overview">Overview</button>
-      <button class="manager-tab" type="button" data-manager-section="manager-pantry-section"><span aria-hidden="true">🥬</span> Pantry</button>
+      <button class="manager-tab" type="button" data-manager-section="manager-pantry-section">Pantry</button>
       <button class="manager-tab" type="button" data-manager-section="manager-menu-section">Menu</button>
       <button class="manager-tab" type="button" data-manager-section="manager-promotions-section">Promotions</button>
       <button class="manager-tab" type="button" data-manager-section="manager-complaints-section">Complaints <span id="manager-complaints-count" class="manager-tab-count">0</span></button>
@@ -652,7 +652,6 @@
   let inactivityTimer = null;
   let waiterOrderRefreshTimer = null;
   let managerRefreshTimer = null;
-  let managerComplaintRefreshTimer = null;
   const INACTIVITY_LIMIT_MS = 10 * 60 * 1000;
 
   // ================================================================
@@ -694,7 +693,7 @@
               && document.getElementById('page-waiter-dashboard').classList.contains('active')) {
               loadWaiterOrders();
             }
-          }, 5000);
+          }, 60000);
         }
       } else if (waiterOrderRefreshTimer !== null) {
         clearInterval(waiterOrderRefreshTimer);
@@ -709,27 +708,19 @@
           managerRefreshTimer = setInterval(() => {
             if (document.visibilityState === 'visible'
               && document.getElementById('page-manager-dashboard').classList.contains('active')) {
-              loadManagerShifts();
+              loadManagerDashboard();
               loadManagerStaffRoster();
-            }
-          }, 30000);
-        }
-        if (managerComplaintRefreshTimer === null) {
-          managerComplaintRefreshTimer = setInterval(() => {
-            if (document.visibilityState === 'visible'
-              && document.getElementById('page-manager-dashboard').classList.contains('active')) {
               refreshUnreadComplaintCount();
+              const activeSection = document.querySelector('[data-manager-section].manager-tab.active')?.dataset.managerSection;
+              if (activeSection === 'manager-pantry-section') loadPantryData();
+              if (activeSection === 'manager-complaints-section') loadManagerComplaintInsights();
             }
-          }, 10000);
+          }, 60000);
         }
       } else {
         if (managerRefreshTimer !== null) {
           clearInterval(managerRefreshTimer);
           managerRefreshTimer = null;
-        }
-        if (managerComplaintRefreshTimer !== null) {
-          clearInterval(managerComplaintRefreshTimer);
-          managerComplaintRefreshTimer = null;
         }
       }
       if (name === 'confirmation') startOrderTracking();
@@ -746,28 +737,6 @@
       } else if (customerOrderHistoryTimer !== null) {
         clearInterval(customerOrderHistoryTimer);
         customerOrderHistoryTimer = null;
-      }
-    }
-  }
-
-  async function refreshManagerDashboard() {
-    const button = document.getElementById('manager-dashboard-refresh');
-    const activeSection = document.querySelector('[data-manager-section].manager-tab.active')?.dataset.managerSection;
-    if (button) {
-      button.disabled = true;
-      button.textContent = 'Refreshing...';
-    }
-    try {
-      await loadManagerDashboard();
-      if (activeSection === 'manager-pantry-section') await loadPantryData();
-      if (activeSection === 'manager-shifts-section') await loadManagerShifts();
-      if (activeSection === 'manager-staff-section') await loadManagerStaffRoster();
-    } catch (error) {
-      showToast(error.message || 'Could not refresh the management suite.');
-    } finally {
-      if (button) {
-        button.disabled = false;
-        button.textContent = 'Refresh';
       }
     }
   }
@@ -986,6 +955,21 @@
       if (!response.ok) throw new Error(result.error || 'Could not load your order history.');
       renderCustomerOrderHistory(result);
       if (message) message.textContent = '';
+      const unsettledOrder = result.find((order) =>
+        !['Completed', 'Paid', 'Cancelled'].includes(order.status)
+      );
+      if (unsettledOrder && document.getElementById('page-customer-orders').classList.contains('active')) {
+        const trackingToken = String(latestOrder?.id) === String(unsettledOrder.id)
+          ? latestOrder.tracking_token
+          : null;
+        latestOrder = trackingToken
+          ? { ...unsettledOrder, tracking_token: trackingToken }
+          : unsettledOrder;
+        dispatchLatestOrder();
+        renderOrderConfirmation();
+        renderConfirmationOrderHistory(result);
+        showPage('confirmation');
+      }
     } catch (error) {
       if (message) message.textContent = error.message || 'Could not load your order history.';
     }
@@ -1526,8 +1510,15 @@
   async function refreshOrderStatus() {
     if (!latestOrder) return;
     try {
+      const headers = orderTrackingHeaders(latestOrder.tracking_token);
+      const historyState = getCustomerOrderHistoryState();
+      if (!latestOrder.tracking_token
+        && historyState?.token
+        && historyState.email?.toLowerCase() === latestOrder.customer_email?.trim().toLowerCase()) {
+        headers.Authorization = `Bearer ${historyState.token}`;
+      }
       const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}`, {
-        headers: orderTrackingHeaders(latestOrder.tracking_token)
+        headers
       });
       if (!response.ok) return;
       latestOrder = { ...latestOrder, ...await response.json() };
@@ -1548,9 +1539,16 @@
     const button = document.getElementById('request-payment-button');
     button.disabled = true;
     try {
+      const headers = orderTrackingHeaders(latestOrder.tracking_token);
+      const historyState = getCustomerOrderHistoryState();
+      if (!latestOrder.tracking_token
+        && historyState?.token
+        && historyState.email?.toLowerCase() === latestOrder.customer_email?.trim().toLowerCase()) {
+        headers.Authorization = `Bearer ${historyState.token}`;
+      }
       const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(latestOrder.id)}/request-payment`, {
         method: 'POST',
-        headers: orderTrackingHeaders(latestOrder.tracking_token)
+        headers
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not notify your waiter.');
@@ -1657,7 +1655,7 @@
       renderOrderMenu();
       renderCart();
     } catch (error) {
-      showToast('Could not load the menu. Start the Python backend first.');
+      showToast('System down, try again later');
     }
   }
 

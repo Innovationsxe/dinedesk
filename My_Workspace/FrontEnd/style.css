@@ -2965,6 +2965,22 @@
     .staff-attendance-pill.absent { color: #8b342e; background: #f8e9e6; }
     .staff-attendance-pill.scheduled { color: #745d28; background: #f5f0df; }
     .staff-orders-heading #waiter-refresh-status { max-width: 55%; text-align: right; }
+    #page-manager-dashboard .manager-auto-refresh-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--staff-muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    #page-manager-dashboard .manager-auto-refresh-status i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #27ae60;
+      box-shadow: 0 0 0 3px rgba(39, 174, 96, .14), 0 0 12px rgba(39, 174, 96, .8);
+      animation: manager-live-pulse 1.8s ease-out infinite;
+    }
     #page-manager-dashboard .manager-dashboard { padding-top: 28px; }
     #page-manager-dashboard .staff-header-actions .manager-action {
       min-height: 38px;
@@ -2977,6 +2993,9 @@
       .order-confirmation-content .confirmation-menu-button { width: 100%; }
       .staff-orders-heading #waiter-refresh-status { font-size: 10px; }
       #page-manager-dashboard .staff-header-actions { flex-wrap: wrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #page-manager-dashboard .manager-auto-refresh-status i { animation: none; }
     }
 
     .order-confirmation-content {
